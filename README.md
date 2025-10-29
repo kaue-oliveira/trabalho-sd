@@ -43,9 +43,15 @@ A arquitetura é baseada em **microserviços containerizados**, onde cada agente
 - **Camada de Orquestração:** gerencia containers (Docker Compose ou Kubernetes).  
 
 ---
-
 ## 🧩 Fluxograma / Data Flow
 
+![Fluxograma do Sistema](DiagramasSD-Fluxograma.drawio.png)
+
+---
+
+## 🏗️ Arquitetura
+
+![Arquitetura do Sistema](DiagramasSD-Arquitetura.drawio.png)
 
 ## 🧠 Justificativa da Arquitetura
 
