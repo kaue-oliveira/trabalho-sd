@@ -35,12 +35,12 @@ A arquitetura é baseada em **microserviços containerizados**, onde cada agente
 
 ### 🔹 Componentes principais
 
-- **Agente Climático:** coleta previsões de tempo e gera resumos normalizados.  
-- **Agente de Preços:** realiza scraping ou consultas a APIs de preços e calcula tendências.  
-- **Agente Agronômico:** integra clima + preço + relatórios técnicos, aplica regras e gera decisões.  
-- **Banco de Dados / Storage:** armazena históricos e logs.  
-- **API Gateway / Frontend (opcional):** expõe os resultados e gerencia autenticação.  
-- **Camada de Orquestração:** gerencia containers (Docker Compose ou Kubernetes).  
+- **Agente Climático:** consome APIs climáticas (como Open-Meteo, INMET, OpenWeather), coleta previsões de tempo e retorna um JSON padronizado.  
+- **Agente de Preços:** realiza scraping ou consultas a APIs de preços (CEPEA, B3, ICO) e retorna dados estruturados em JSON.  
+- **Agente Agronômico:** integra as informações de clima e preço, interpreta relatórios técnicos e, com apoio de um modelo de linguagem, gera recomendações explicáveis para o produtor.  
+- **Ollama (LLM Local):** executa modelos de linguagem (ex.: Llama 3, Mistral, Phi) de forma **local e privada**, permitindo que o **Agente Agronômico** utilize processamento de linguagem natural   (NLP) e geração de texto sem depender de APIs externas.  
+- **Banco de Dados / Storage:** armazena históricos climáticos, séries de preços, relatórios e logs de execução.  
+- **API Gateway / Frontend:** expõe os resultados dos agentes, centraliza as requisições e gerencia autenticação e segurança.  
 
 ---
 ## 🧩 Fluxograma / Data Flow
@@ -54,54 +54,7 @@ A arquitetura é baseada em **microserviços containerizados**, onde cada agente
 ![Arquitetura do Sistema](DiagramasSD-Arquitetura.drawio.png)
 
 ## 🧠 Justificativa da Arquitetura
-
-### 1. 🧩 Microserviços + Docker
-Cada agente é **independente** e cumpre uma **responsabilidade única**, garantindo modularidade e flexibilidade.  
-Essa abordagem:
-- Permite **escalar partes específicas** do sistema (por exemplo, o agente de análise climática) sem afetar os demais módulos.  
-- Facilita **testes, manutenção e substituição** de componentes isoladamente.  
-- Aumenta a **resiliência** — se um agente falhar, o restante do sistema continua operando.  
-
 ---
 
-### 2. 🌐 Comunicação via API REST
-A comunicação entre os agentes ocorre por meio de **APIs REST**, garantindo:
-- **Simplicidade e interoperabilidade**, já que REST é amplamente suportado.  
-- Possibilidade de **evolução futura** para sistemas de mensageria (como **Kafka** ou **RabbitMQ**) caso a escala do projeto aumente.  
-
----
-
-### 3. ⏰ Jobs Agendados
-A coleta de dados climáticos e de preços ocorre em **intervalos regulares**, garantindo:
-- **Consistência temporal** das informações, já que clima e preços são séries temporais.  
-- Capacidade de realizar **análises comparativas** entre períodos (ex.: variação semanal).  
-
----
-
-### 4. 🧩 Explicabilidade
-O agente agronômico combina **regras heurísticas** e **NLP leve** para gerar **recomendações textuais explicáveis**.  
-Assim, o produtor entende **por que** uma decisão foi sugerida (ex.: “valorização provável devido à estiagem”).  
-
----
-
-### 5. 💾 Banco de Dados Centralizado
-O uso de um banco de dados central:
-- Garante **histórico completo** das informações coletadas.  
-- Permite **rastreamento e auditoria** das decisões tomadas.  
-- Facilita análises retrospectivas e melhoria contínua do modelo.  
-
----
-
-## 🧰 Tecnologias Sugeridas
-
-| **Categoria** | **Tecnologia** |
-|----------------|----------------|
-| **Linguagens** | Python (Agentes, ML), Node.js (API Gateway) |
-| **Containers** | Docker, Docker Compose, Kubernetes |
-| **Banco de Dados** | PostgreSQL / TimescaleDB |
-| **NLP / ML** | spaCy, Transformers (modelos pequenos) |
-| **Scheduler** | Cron, Celery, Airflow |
-| **Frontend** | React ou Next.js |
-| **Mensageria (opcional)** | RabbitMQ, Kafka |
 
 ---
