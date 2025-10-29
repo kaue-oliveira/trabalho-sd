@@ -84,7 +84,6 @@ A escolha dessa abordagem se justifica por:
 
 - **Simplicidade e padronização** (HTTP + JSON são amplamente suportados).  
 - **Escalabilidade horizontal**, permitindo execução distribuída em diferentes containers.  
-- **Isolamento de falhas** — um agente pode falhar ou ser reiniciado sem interromper o sistema.  
 - **Compatibilidade com o modelo de containers Docker**, conforme exigido no trabalho.
 
 ---
