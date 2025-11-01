@@ -38,7 +38,7 @@ const LoginPage: React.FC = () => {
     setTimeout(() => {
       setLoading(false);
       console.log("Login realizado:", data);
-      navigate('/dashboard');
+      navigate('/painel-de-controle');
     }, 1000);
   };
 
