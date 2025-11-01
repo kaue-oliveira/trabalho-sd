@@ -1,13 +1,16 @@
 import React from 'react';
 import styles from './PublicHome.module.css';
+import { Link, useNavigate } from 'react-router-dom';
 
 const PublicHome: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
     <div className={styles.root}>
       <div className={styles.layoutContainer}>
         <div className={styles.contentWrapper}>
           <div className={styles.layoutContent}>
-            {/* Header */}
+       
             <header className={styles.header}>
               <div className={styles.logo}>
                 <div className={styles.logoIcon}>
@@ -18,18 +21,16 @@ const PublicHome: React.FC = () => {
                 <h2 className={styles.logoText}>AgroAnalytics</h2>
               </div>
               <div className={styles.headerActions}>
-                <button className={styles.btnPrimary}>
+                <button className={styles.btnPrimary} onClick={() => navigate('/cadastrar')}>
                   Cadastrar
                 </button>
-                <button className={styles.btnSecondary}>
+                <button className={styles.btnSecondary} onClick={() => navigate('/login')}>
                   Entrar
                 </button>
               </div>
             </header>
 
-            {/* Main Content */}
             <main>
-              {/* Hero Section */}
               <div className={styles.heroContainer}>
                 <div className={styles.heroPadding}>
                   <div className={styles.hero}>
@@ -42,10 +43,10 @@ const PublicHome: React.FC = () => {
                       </p>
                     </div>
                     <div className={styles.heroActions}>
-                      <button className={styles.btnHeroPrimary}>
+                      <button className={styles.btnHeroPrimary} onClick={() => navigate('/cadastrar')}>
                         Começar Agora
                       </button>
-                      <button className={styles.btnHeroSecondary}>
+                      <button className={styles.btnHeroSecondary} onClick={() => navigate('/login')}>
                         Entrar
                       </button>
                     </div>
@@ -53,13 +54,12 @@ const PublicHome: React.FC = () => {
                 </div>
               </div>
 
-              {/* Features Section */}
               <section className={styles.featuresSection}>
                 <h2 className={styles.sectionTitle}>Como Funciona</h2>
                 <div className={styles.featuresGrid}>
                   <div className={styles.featureCard}>
                     <div className={styles.featureIcon}>
-                      <span className={styles.materialIcon}>cloud</span>
+                      <i className={styles.materialIcon}>cloud</i>
                     </div>
                     <div className={styles.featureContent}>
                       <h3 className={styles.featureTitle}>Dados Climáticos</h3>
@@ -71,7 +71,7 @@ const PublicHome: React.FC = () => {
 
                   <div className={styles.featureCard}>
                     <div className={styles.featureIcon}>
-                      <span className={styles.materialIcon}>show_chart</span>
+                      <i className={styles.materialIcon}>show_chart</i>
                     </div>
                     <div className={styles.featureContent}>
                       <h3 className={styles.featureTitle}>Análise de Mercado</h3>
@@ -83,7 +83,7 @@ const PublicHome: React.FC = () => {
 
                   <div className={styles.featureCard}>
                     <div className={styles.featureIcon}>
-                      <span className={styles.materialIcon}>insights</span>
+                      <i className={styles.materialIcon}>insights</i>
                     </div>
                     <div className={styles.featureContent}>
                       <h3 className={styles.featureTitle}>Decisão Inteligente</h3>
@@ -96,15 +96,13 @@ const PublicHome: React.FC = () => {
               </section>
             </main>
 
-            {/* Footer */}
             <footer className={styles.footer}>
               <nav className={styles.footerLinks}>
-                <a href="/" className={styles.footerLink}>Início</a>
-                <a href="/nova-analise" className={styles.footerLink}>Nova Análise</a>
-                <a href="/analises-recentes" className={styles.footerLink}>Análises Recentes</a>
-                <a href="/perfil" className={styles.footerLink}>Perfil</a>
-                <a href="/login" className={styles.footerLink}>Login</a>
-                <a href="/cadastrar" className={styles.footerLink}>Cadastrar</a>
+                <Link to="/nova-analise" className={styles.footerLink}>Nova Análise</Link>
+                <Link to="/historico-analises" className={styles.footerLink}>Histório de Análises</Link>
+                <Link to="/perfil" className={styles.footerLink}>Perfil</Link>
+                <Link to="/login" className={styles.footerLink}>Login</Link>
+                <Link to="/cadastrar" className={styles.footerLink}>Cadastrar</Link>
               </nav>
               <p className={styles.copyright}>© 2025 AgroAnalytics. Sistema de Apoio à Decisão para Cafeicultura.</p>
             </footer>

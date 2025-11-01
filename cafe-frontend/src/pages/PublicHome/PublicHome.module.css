@@ -1,17 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined');
-
 /* Root Styles */
 .root {
-  font-family: 'Inter', sans-serif;
   background-color: #f6f8f6;
-  color: #111827;
   min-height: 100vh;
   width: 100%;
   overflow-x: hidden;
   position: relative;
   display: flex;
   flex-direction: column;
+  margin-top: 1rem;
 }
 
 .layoutContainer {
@@ -362,8 +358,10 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  gap: 1rem 1.5rem;
+  justify-content: space-between;
+  padding-inline: 1.25rem;
+  margin-bottom: 1.25rem;
+
 }
 
 .footerLink {
