@@ -17,7 +17,6 @@ const App: React.FC = () => {
         <Route path="/cadastrar" element={<RegistrationPage />} />
         <Route path='/esqueceu-senha' element={<ForgotPasswordPage />} />
         <Route path='/alterar-senha' element={<ChangePasswordPage />} />
-        <Route path='/alterar-senha' element={<ChangePasswordPage />} />
         <Route path='/painel-de-controle' element={<Dashboard />} />
       </Routes>
     </BrowserRouter>
