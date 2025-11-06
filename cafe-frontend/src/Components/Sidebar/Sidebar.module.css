@@ -159,4 +159,18 @@
   margin: 0;
 }
 
+.profileContainer.active {
+  background-color: rgba(47, 127, 51, 0.1);
+}
+
+.profileContainer.active .avatarCircle {
+  background-color: #2f7f33;
+  color: white;
+}
+
+.profileContainer.active .profileName {
+  color: #2f7f33;
+}
+
+
 

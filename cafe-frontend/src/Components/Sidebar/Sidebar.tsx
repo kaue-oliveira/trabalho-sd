@@ -62,7 +62,12 @@ const Sidebar: React.FC<SidebarProps> = ({ userName = "Gabriel" }) => {
 
       {/* ===== Rodapé (Perfil) ===== */}
       <div className={styles.sidebarFooter}>
-        <Link to="/perfil" className={styles.profileContainer}>
+        <Link
+            to="/perfil"
+            className={`${styles.profileContainer} ${
+              location.pathname.includes('/perfil') ? styles.active : ''
+            }`}
+          >
           <div className={styles.avatarCircle}>{userInitial}</div>
           <p className={styles.profileName}>{userName}</p>
         </Link>

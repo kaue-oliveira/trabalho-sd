@@ -1,0 +1,382 @@
+.materialIcon {
+  font-family: 'Material Symbols Outlined';
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  user-select: none;
+  font-style: normal;
+}
+
+.container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f6f8f6;
+  font-family: 'Inter', sans-serif;
+}
+
+.mainContent {
+  flex: 1;
+  margin-left: 16rem;
+  padding: 1.25rem 2.5rem;
+}
+
+.contentContainer {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding-top: 1.25rem;
+  display: flex;
+  flex-direction: column;   
+}
+
+.pageHeader {
+  display: flex;
+  align-items: center;
+  padding: 1rem 0;
+  margin-bottom: 1rem;
+}
+
+.title {
+  color: #131613;
+  font-size: 2.25rem;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: -0.033em;
+  margin: 0;
+}
+
+.profileCard {
+  background-color: white;
+  border-radius: 0.75rem;
+  border: 1px solid #dee3de;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+    
+.profileHeader {
+  padding: 2rem;
+  border-bottom: 1px solid #dee3de;
+}
+
+.avatarSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .avatarSection {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.avatarCircle {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 50%;
+  background-color: #2f7f33;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.profileInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .profileInfo {
+    align-items: flex-start;
+  }
+}
+
+.userName {
+  color: #131613;
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.userEmail {
+  color: #6b7280;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.userBadge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  background-color: rgba(47, 127, 51, 0.2);
+  color: #2f7f33;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  margin-top: 0.5rem;
+}
+
+.formSection {
+  padding: 2rem;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 0rem;
+}
+
+@media (min-width: 640px) {
+  .formGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.inputLabel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.labelText {
+  color: #131613;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  padding-bottom: 0.5rem;
+  margin: 0;
+}
+
+.inputWrapper {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+
+.iconLeft {
+  position: absolute;
+  left: 0.75rem;
+  color: rgba(19, 22, 19, 0.5);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.iconRight {
+  position: absolute;
+  right: 0.75rem;
+  color: rgba(19, 22, 19, 0.4);
+  pointer-events: none;
+}
+
+.input, .select {
+  width: 100%;
+  border-radius: 0.5rem;
+  color: #131613;
+  border: 1px solid #dee3de;
+  background-color: white;
+  height: 3rem;
+  padding: 0 2.5rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.2s;
+}
+
+.input::placeholder {
+  color: rgba(19, 22, 19, 0.5);
+}
+
+.input:focus, .select:focus {
+  outline: none;
+  border-color: #2f7f33;
+  box-shadow: 0 0 0 3px rgba(47, 127, 51, 0.1);
+}
+
+.select {
+  appearance: none;
+  cursor: pointer;
+}
+
+.togglePassword {
+  position: absolute;
+  right: 0;
+  height: 100%;
+  padding: 0 1rem;
+  color: rgba(19, 22, 19, 0.5);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  border-radius: 0 0.5rem 0.5rem 0;
+  z-index: 2;
+}
+
+.togglePassword:hover {
+  color: #131613;
+}
+
+/* Action Buttons */
+.actionButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #dee3de;
+}
+
+@media (min-width: 640px) {
+  .actionButtons {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+.deleteButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #d81b60;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  padding: 0.625rem 1rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+
+.deleteButton:hover {
+  background-color: rgba(216, 27, 96, 0.1);
+}
+
+.formActions {
+  display: flex;
+  gap: 0.75rem;
+  flex-direction: column;
+}
+
+@media (min-width: 640px) {
+  .formActions {
+    flex-direction: row;
+  }
+}
+
+.cancelButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 5.25rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  background-color: #f1f3f1;
+  color: #131613;
+  border: none;
+  cursor: pointer;
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  transition: background-color 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+
+.cancelButton:hover {
+  background-color: #e5e7e5;
+}
+
+.saveButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 5.25rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  background-color: #2f7f33;
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  transition: background-color 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+
+.saveButton:hover {
+  background-color: #256426;
+}
+
+.successNotification {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: #4CAF50;
+  color: white;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  animation: slideIn 0.3s ease-out;
+  z-index: 9999;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .mainContent {
+    padding: 1rem;
+  }
+  
+  .profileHeader,
+  .formSection {
+    padding: 1.5rem;
+  }
+  
+  .avatarCircle {
+    width: 4rem;
+    height: 4rem;
+    font-size: 1.5rem;
+  }
+  
+  .userName {
+    font-size: 1.25rem;
+  }
+
+  .title {
+    font-size: 1.875rem;
+  }
+}
