@@ -1,0 +1,477 @@
+.materialIcon {
+  font-family: 'Material Symbols Outlined';
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  user-select: none;
+  font-style: normal;
+}
+
+.container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f6f8f6;
+  font-family: 'Inter', sans-serif;
+}
+
+.mainContent {
+  flex: 1;
+  margin-left: 16rem;
+  padding: 1.25rem;
+}
+
+.contentContainer {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Page Header */
+.pageHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 18rem;
+}
+
+.title {
+  color: #131613;
+  font-size: 2.25rem;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: -0.033em;
+  margin: 0;
+}
+
+.subtitle {
+  color: #6b7280;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.newAnalysisButton {
+  display: flex;
+  min-width: 5.25rem;
+  max-width: 30rem;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  height: 2.5rem;
+  padding: 0 1.25rem;
+  background-color: #2f7f33;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.015em;
+  border: none;
+  gap: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.newAnalysisButton:hover {
+  background-color: rgba(47, 127, 51, 0.9);
+}
+
+.newAnalysisButton:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(47, 127, 51, 0.1);
+}
+
+.buttonText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  z-index: 10;
+}
+
+@media (min-width: 768px) {
+  .filters {
+    flex-direction: row;
+  }
+}
+
+.searchContainer {
+  flex: 1;
+}
+
+.searchLabel {
+  display: flex;
+  flex-direction: column;
+  min-width: 10rem;
+  height: 3rem;
+  width: 100%;
+}
+
+.searchWrapper {
+  display: flex;
+  width: 100%;
+  flex: 1;
+  align-items: stretch;
+  border-radius: 0.5rem;
+  height: 100%;
+}
+
+.searchIcon {
+  color: #6b806c;
+  display: flex;
+  border-right: 0;
+  border-color: #e5e7eb;
+  background-color: white;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 0.6rem 0.4rem;
+  border-top-left-radius: 0.5rem;
+  border-bottom-left-radius: 0.5rem;
+}
+
+.searchInput {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  resize: none;
+  overflow: hidden;
+  border-top-right-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  background-color: white;
+  height: 100%;
+  padding: 0 1rem;
+  padding-left: 0.5rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.searchInput:focus {
+  border-color: #2f7f33;
+  box-shadow: 0 0 0 3px rgba(47, 127, 51, 0.1);
+}
+
+.searchInput::placeholder {
+  color: #6b7280;
+}
+
+.filterChips {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+/* Filter Dropdown */
+.filterChip {
+  display: flex;
+  height: 3rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  padding: 0 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+
+.filterChip:hover {
+  background-color: #f6f8f6;
+  border-color: #d2d4da;
+}
+
+.filterChip:focus {
+  outline: none;
+  border-color: #2f7f33;
+  box-shadow: 0 0 0 3px rgba(47, 127, 51, 0.1);
+}
+
+.filterChipActive {
+  border-color: #2f7f33;
+  background-color: #f6f8f6;
+}
+
+.chipText {
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.iconRotated {
+  transform: rotate(180deg);
+}
+
+.icon {
+  transition: transform 0.2s;
+}
+
+/* Dropdown Menu */
+.dropdownMenu {
+  min-width: 12rem;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  z-index: 9999;
+  max-height: 20rem;
+  overflow-y: auto;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdownItem {
+  padding: 0.75rem 1rem;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.dropdownItem:last-child {
+  border-bottom: none;
+}
+
+.dropdownItem:hover {
+  background-color: #f6f8f6;
+}
+
+.dropdownItem:focus {
+  outline: none;
+  background-color: #f6f8f6;
+  box-shadow: inset 0 0 0 2px rgba(47, 127, 51, 0.2);
+}
+
+.dropdownItemActive {
+  background-color: #dcfce7;
+  color: #166534;
+  font-weight: 500;
+}
+
+.dropdownItemActive:hover {
+  background-color: #bbf7d0;
+}
+
+/* Table */
+.tableContainer {
+  width: 100%;
+}
+
+.tableWrapper {
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  background-color: white;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tableHeader {
+  background-color: #f6f8f6;
+}
+
+.tableCol {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.tableColDate {
+  width: 15%;
+}
+
+.tableColType {
+  width: 20%;
+}
+
+.tableColDecision {
+  width: 15%;
+}
+
+.tableColSummary {
+  width: 50%;
+}
+
+.tableBody {
+  display: table-row-group;
+  vertical-align: middle;
+}
+
+.tableRow {
+  transition: background-color 0.2s;
+}
+
+.tableRow:hover {
+  background-color: #f6f8f6;
+}
+
+.tableBody .tableCol {
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.25;
+  height: 4.5rem;
+  padding: 0.5rem 1rem;
+}
+
+.decisionBadge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.decisionSell {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.decisionHold {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.decisionPartial {
+  background-color: #fef9c3;
+  color: #854d0e;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+}
+
+.paginationText {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.paginationNumber {
+  font-weight: 500;
+  color: #4b5563; 
+}
+
+.paginationControls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.paginationButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.5rem;
+  width: 2.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  background-color: white;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.paginationButton:hover {
+  background-color: #f6f8f6;
+  border: 1px solid #d2d4da;
+}
+
+.paginationButton:focus {
+  outline: none;
+  border-color: #2f7f33;
+  box-shadow: 0 0 0 3px rgba(47, 127, 51, 0.1);
+}
+
+.paginationButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.paginationButton:disabled:hover {
+  background-color: white;
+  border-color: #e5e7eb;
+}
+
+/* Responsive Table */
+@media (max-width: 768px) {
+  .tableColSummary {
+    display: none;
+  }
+  
+  .tableColDate {
+    width: 25%;
+  }
+  
+  .tableColType {
+    width: 40%;
+  }
+  
+  .tableColDecision {
+    width: 35%;
+  }
+}
+
+@media (max-width: 560px) {
+  .tableColType {
+    display: none;
+  }
+  
+  .tableColDate {
+    width: 40%;
+  }
+  
+  .tableColDecision {
+    width: 60%;
+  }
+}
