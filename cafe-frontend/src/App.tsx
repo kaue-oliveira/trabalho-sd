@@ -8,6 +8,7 @@ import ForgotPasswordPage from './pages/AuthPages/ForgotPasswordPage';
 import ChangePasswordPage from './pages/AuthPages/ChangePasswordPage';
 import Dashboard from './pages/Dashboard/Dashboard';
 import NewAnalysis from './pages/NewAnalysis/NewAnalysis';
+import HistoricAnalyses from './pages/HistoricAnalyses/HistoricAnalyses';
 
 const App: React.FC = () => {
   return (
@@ -20,6 +21,7 @@ const App: React.FC = () => {
         <Route path='/alterar-senha' element={<ChangePasswordPage />} />
         <Route path='/painel-de-controle' element={<Dashboard />} />
         <Route path='/nova-analise' element={<NewAnalysis />} />
+        <Route path='/historico-analises' element={<HistoricAnalyses />} />
       </Routes>
     </BrowserRouter>
   );
