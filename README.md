@@ -56,7 +56,7 @@ Essa abordagem reflete um modelo **orientado à responsabilidade funcional**, em
 | 🚪 **API Gateway** | Ponto único de entrada e roteamento. Gerencia autenticação, controle de acesso e redireciona requisições REST entre agentes. |
 | 🌱 **Agente Agronômico** | Atua como **núcleo lógico de decisão**. Recebe solicitações via Gateway, requisita dados dos agentes de clima e preço (por meio do Gateway), integra os resultados e aplica análise preditiva. |
 | 🌤️ **Agente Climático** | Consome APIs meteorológicas (Open-Meteo, INMET, WeatherAPI), processa e retorna dados estruturados sobre temperatura, precipitação e umidade. |
-| 💰 **Agente de Preço do Café** | Consulta APIs e realiza scraping em fontes como CEPEA, B3 e ICO, retornando dados de preço e tendência de mercado. |
+| 💰 **Agente de Preço do Café** | Realiza scraping em fontes como CEPEA, B3 e ICO, retornando dados de preço e tendência de mercado. |
 | 🧠 **Serviço Ollama (LLM Local)** | Modelo de linguagem local (Ollama) executado em container, responsável por gerar textos explicativos com base na análise do Agente Agronômico. |
 | 🗄️ **Banco de Dados / Storage** | Armazena históricos climáticos, econômicos e relatórios técnicos. |
 | 🌎 **Fontes Externas** | APIs e sites públicos de clima e mercado de commodities. |
