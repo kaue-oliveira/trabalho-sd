@@ -3,10 +3,12 @@ import Form from '../../Components/Form/Form';
 import type { FormField } from '../../Components/Form/Form';
 import styles from './AuthPages.module.css';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
 
   const fields: FormField[] = [
     { 
@@ -35,17 +37,20 @@ const LoginPage: React.FC = () => {
 
   const handleSubmit = async (data: Record<string,string>) => {
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      console.log("Login realizado:", data);
+    const result = await login(data.email, data.password);
+    
+    if (result.success) {
       navigate('/painel-de-controle');
-    }, 1000);
+    } else {
+      alert(result.error);
+    }
+    setLoading(false);
   };
 
   return (
     <div className={styles.authPage}>
-      <div style={{ width: '100%', maxWidth: 960, padding: 16 }}>
-        <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start', justifyContent: 'center' }}>
+      <div className={styles.authContainer}>
+        <div className={styles.authLayout}>
           <div className={styles.loginWrapper}>
             <Form
               title="Entre na sua conta"

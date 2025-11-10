@@ -23,8 +23,8 @@ const ForgotPasswordPage: React.FC = () => {
 
   return (
     <div className={styles.authPage}>
-      <div style={{ width: '100%', maxWidth: 960, padding: 16 }}>
-        <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start', justifyContent: 'center' }}>
+      <div className={styles.authContainer}>
+        <div className={styles.authLayout}>
           <div className={styles.loginWrapper}>
             <Form
               title="Esqueceu sua senha?"

@@ -137,6 +137,18 @@
   margin-bottom: 0rem;
 }
 
+.passwordHint {
+    font-size: 0.875rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+.passwordError {
+    font-size: 0.875rem;
+    color: #d32f2f;
+    margin-top: 0.25rem;
+}
+
 @media (min-width: 640px) {
   .formGrid {
     grid-template-columns: 1fr 1fr;

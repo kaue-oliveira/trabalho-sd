@@ -1,24 +1,28 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../Components/Sidebar/Sidebar';
+import { useAuth } from '../../context/AuthContext';
 import styles from './Profile.module.css';
 
 const Profile: React.FC = () => {
     const navigate = useNavigate();
-    const userName = "Gabriel";
+    const { user, logout } = useAuth();
+    
+    const userName = user?.nome || "Usuário";
+    const userEmail = user?.email || "email@exemplo.com";
     const userInitial = userName.charAt(0).toUpperCase();
-    const userEmail = "gabriel.fazendeiro@exemplo.com";
+    const accountType = user?.tipo_conta === "PRODUTOR" ? "Produtor" : "Cooperativa";
 
     const [showSuccess, setShowSuccess] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const [formData, setFormData] = useState({
-        fullName: 'Gabriel',
-        email: 'gabriel.fazendeiro@exemplo.com',
+        fullName: userName,
+        email: userEmail,
         newPassword: '',
         confirmPassword: '',
-        accountType: 'Fazendeiro'
+        accountType: accountType
     });
 
     const handleChange = (field: string, value: string) => {
@@ -27,14 +31,54 @@ const Profile: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        
+        if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
+            alert("As senhas não coincidem!");
+            return;
+        }
+        
         console.log('Dados do perfil salvos:', formData);
+        
+        // =====================================================
+        // **TROCAR AQUI QUANDO GATEWAY ESTIVER PRONTO**
+        // =====================================================
+        // const updateData = {
+        //   nome: formData.fullName,
+        //   email: formData.email,
+        //   senha: formData.newPassword || undefined,
+        //   tipo_conta: formData.accountType.toUpperCase() // ✅ **ENVIAR TIPO DE CONTA**
+        // };
+        // 
+        // const response = await fetch('http://localhost:3000/usuarios/me', {
+        //   method: 'PUT',
+        //   headers: {
+        //     'Authorization': `Bearer ${token}`,
+        //     'Content-Type': 'application/json'
+        //   },
+        //   body: JSON.stringify(updateData)
+        // });
+        // =====================================================
+        
+        // **CÓDIGO MOCKADO - MANTER POR ENQUANTO**
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 3000);
     };
 
     const handleDeleteAccount = () => {
         if (window.confirm('Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.')) {
+            // =====================================================
+            // **TROCAR AQUI QUANDO GATEWAY ESTIVER PRONTO**
+            // =====================================================
+            // const response = await fetch('http://localhost:3000/usuarios/me', {
+            //   method: 'DELETE',
+            //   headers: {
+            //     'Authorization': `Bearer ${token}`
+            //   }
+            // });
+            // =====================================================
+            
             console.log('Conta excluída');
+            logout();
             navigate('/');
         }
     };
@@ -46,7 +90,7 @@ const Profile: React.FC = () => {
 
     return (
         <div className={styles.container}>
-            <Sidebar userName={userName} />
+            <Sidebar />
 
             <main className={styles.mainContent}>
                 <div className={styles.contentContainer}>
@@ -63,7 +107,9 @@ const Profile: React.FC = () => {
                                 <div className={styles.profileInfo}>
                                     <h2 className={styles.userName}>{userName}</h2>
                                     <p className={styles.userEmail}>{userEmail}</p>
-                                    <div className={styles.userBadge}>Fazendeiro</div>
+                                    <div className={styles.userBadge}>
+                                        {accountType}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -99,7 +145,6 @@ const Profile: React.FC = () => {
                                     </div>
                                 </label>
 
-
                                 <div className={styles.formGrid}>
                                     <label className={styles.inputLabel}>
                                         <p className={styles.labelText}>Nova Senha</p>
@@ -123,6 +168,11 @@ const Profile: React.FC = () => {
                                                 </i>
                                             </button>
                                         </div>
+                                        {formData.newPassword && (
+                                            <p className={styles.passwordHint}>
+                                                Deixe em branco para manter a senha atual
+                                            </p>
+                                        )}
                                     </label>
 
                                     <label className={styles.inputLabel}>
@@ -147,6 +197,9 @@ const Profile: React.FC = () => {
                                                 </i>
                                             </button>
                                         </div>
+                                        {formData.newPassword !== formData.confirmPassword && formData.confirmPassword && (
+                                            <p className={styles.passwordError}>As senhas não coincidem</p>
+                                        )}
                                     </label>
                                 </div>
 
@@ -159,7 +212,7 @@ const Profile: React.FC = () => {
                                             value={formData.accountType}
                                             onChange={(e) => handleChange('accountType', e.target.value)}
                                         >
-                                            <option value="Fazendeiro">Fazendeiro</option>
+                                            <option value="Produtor">Produtor</option>
                                             <option value="Cooperativa">Cooperativa</option>
                                         </select>
                                         <i className={`${styles.materialIcon} ${styles.iconRight}`}>expand_more</i>
