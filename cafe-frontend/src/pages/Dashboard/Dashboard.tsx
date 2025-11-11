@@ -1,11 +1,14 @@
 import styles from './Dashboard.module.css';
 import { Link, useNavigate } from 'react-router-dom';
 import Sidebar from '../../Components/Sidebar/Sidebar';
+import { useAuth } from '../../context/AuthContext';
 
 const Dashboard: React.FC = () => {
-  const userName = "Gabriel";
+  const { user, analisesUsuario } = useAuth();
   const navigate = useNavigate();
 
+  const userName = user?.nome || "Usuário";
+  
   const handleNewAnalysis = () => {
     console.log("Nova análise iniciada");
     navigate('/nova-analise');
@@ -16,26 +19,32 @@ const Dashboard: React.FC = () => {
     navigate('/historico-analises');
   };
 
-  const recentAnalyses = [
-    { id: "AN-004", date: "28/10/2024", coffeeType: "Arábica", quantity: "120 sacas", decision: "Vender Agora" },
-    { id: "AN-003", date: "26/10/2024", coffeeType: "Arábica", quantity: "200 sacas", decision: "Aguardar" },
-    { id: "AN-002", date: "24/10/2024", coffeeType: "Robusta", quantity: "80 sacas", decision: "Vender Parcialmente" },
-    { id: "AN-001", date: "22/10/2024", coffeeType: "Arábica", quantity: "150 sacas", decision: "Vender Agora" }
-  ];
+  const recentAnalyses = analisesUsuario
+    .sort((a, b) => b.id - a.id) // Ordenar por ID decrescente (mais recentes primeiro)
+    .slice(0, 4); // Pegar apenas as 4 mais recentes
 
-  const sortedAnalyses = [...recentAnalyses].sort((a, b) => {
-    const idA = parseInt(a.id.split('-')[1]);
-    const idB = parseInt(b.id.split('-')[1]);
-    return idB - idA;
+  // **CALCULAR ESTATÍSTICAS COM DADOS REAIS**
+  const sellNowCount = analisesUsuario.filter(a => a.decisao === "VENDER").length;
+  const sellPartiallyCount = analisesUsuario.filter(a => a.decisao === "VENDER_PARCIALMENTE").length;
+  const waitCount = analisesUsuario.filter(a => a.decisao === "AGUARDAR").length;
+  const totalAnalises = analisesUsuario.length;
+
+  // **FORMATAR DADOS PARA A TABELA**
+  const formatAnalysisForTable = (analise: any) => ({
+    id: `AN-${analise.id.toString().padStart(3, '0')}`,
+    date: new Date(analise.data_colheita).toLocaleDateString('pt-BR'),
+    coffeeType: analise.tipo_cafe,
+    quantity: `${analise.quantidade} kg`,
+    decision: analise.decisao === "VENDER" ? "Vender Agora" : 
+              analise.decisao === "VENDER_PARCIALMENTE" ? "Vender Parcialmente" : 
+              "Aguardar"
   });
 
-  const sellNowCount = recentAnalyses.filter(a => a.decision === "Vender Agora").length;
-  const sellPartiallyCount = recentAnalyses.filter(a => a.decision === "Vender Parcialmente").length;
-  const waitCount = recentAnalyses.filter(a => a.decision === "Aguardar").length;
+  const tableAnalyses = recentAnalyses.map(formatAnalysisForTable);
 
   return (
     <div className={styles.dashboard}>
-      <Sidebar userName={userName} />
+      <Sidebar />
   
       <div className={styles.mainContent}>
         <main className={styles.main}>
@@ -77,7 +86,7 @@ const Dashboard: React.FC = () => {
               </div>
               <div className={styles.statCard}>
                 <p className={styles.statLabel}>Total de Análises</p>
-                <p className={styles.statValue}>{recentAnalyses.length}</p>
+                <p className={styles.statValue}>{totalAnalises}</p>
               </div>
             </div>
           </section>
@@ -99,7 +108,7 @@ const Dashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedAnalyses.map((analysis) => (
+                  {tableAnalyses.map((analysis) => (
                     <tr key={analysis.id}>
                       <td className={styles.analysisName}>{analysis.id}</td>
                       <td>{analysis.date}</td>

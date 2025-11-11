@@ -1,27 +1,33 @@
 import React, { useState } from 'react';
 import Form from '../../Components/Form/Form';
 import type { FormField } from '../../Components/Form/Form';
+import Modal from '../../Components/Modal/Modal';
 import styles from './AuthPages.module.css';
 import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { loginValidations } from '../../utils/Validations';
+import { useNotification } from '../../hooks/useNotification';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+  const { notification, showNotification, closeNotification } = useNotification();
 
   const fields: FormField[] = [
-    { 
-      name: 'email', 
-      label: 'E-mail', 
-      type: 'email', 
-      placeholder: 'seu@email.com', 
-      icon: 'email' 
+    {
+      name: 'email',
+      label: 'E-mail',
+      type: 'email',
+      placeholder: 'seu@email.com',
+      icon: 'email'
     },
-    { 
-      name: 'password', 
-      label: 'Senha', 
-      type: 'password', 
-      placeholder: '••••••••', 
-      icon: 'lock', 
+    {
+      name: 'password',
+      label: 'Senha',
+      type: 'password',
+      placeholder: '••••••••',
+      icon: 'lock',
       showPasswordToggle: true,
       helperText: (
         <div className={styles.forgotPasswordContainer}>
@@ -33,19 +39,30 @@ const LoginPage: React.FC = () => {
     }
   ];
 
-  const handleSubmit = async (data: Record<string,string>) => {
+  const handleSubmit = async (data: Record<string, string>) => {
+    const validation = loginValidations.validateLogin(data.email, data.password);
+
+    if (!validation.isValid) {
+      showNotification('error', validation.message!);
+      return;
+    }
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      console.log("Login realizado:", data);
-      navigate('/painel-de-controle');
-    }, 1000);
+    const result = await login(data.email, data.password);
+
+    if (result.success) {
+      showNotification('success', 'Login realizado com sucesso!');
+      setTimeout(() => navigate('/painel-de-controle'), 1000);
+    } else {
+      showNotification('error', result.error || 'Erro ao fazer login');
+    }
+    setLoading(false);
   };
 
   return (
     <div className={styles.authPage}>
-      <div style={{ width: '100%', maxWidth: 960, padding: 16 }}>
-        <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start', justifyContent: 'center' }}>
+      <div className={styles.authContainer}>
+        <div className={styles.authLayout}>
           <div className={styles.loginWrapper}>
             <Form
               title="Entre na sua conta"
@@ -65,6 +82,13 @@ const LoginPage: React.FC = () => {
           </div>
         </div>
       </div>
+      <Modal
+        isOpen={notification.isOpen}
+        onClose={closeNotification}
+        type={notification.type}
+        message={notification.message}
+        duration={notification.type === 'success' ? 3000 : 4000}
+      />
     </div>
   );
 };

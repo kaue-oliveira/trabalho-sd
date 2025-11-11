@@ -1,10 +1,14 @@
 import Form from '../../Components/Form/Form';
 import type { FormField } from '../../Components/Form/Form';
+import Modal from '../../Components/Modal/Modal';
 import styles from './AuthPages.module.css';
 import { useNavigate } from 'react-router-dom';
+import { changePasswordValidations } from '../../utils/Validations';
+import { useNotification } from '../../hooks/useNotification';
 
 const ChangePasswordPage: React.FC = () => {
   const navigate = useNavigate();
+  const { notification, showNotification, closeNotification } = useNotification();
 
   const fields: FormField[] = [
     {
@@ -25,15 +29,35 @@ const ChangePasswordPage: React.FC = () => {
     },
   ];
 
-  const handleSubmit = (data: Record<string, string>) => {
-    console.log('Senha alterada:', data);
-    navigate('/login');
+  const handleSubmit = async (data: Record<string, string>) => {
+    const validation = changePasswordValidations.validateChangePassword(
+      data.newPassword,
+      data.confirmPassword
+    );
+
+    if (!validation.isValid) {
+      showNotification('error', validation.message!);
+      return;
+    }
+
+    try {
+      console.log('Senha alterada:', data);
+
+      // =====================================================
+      // **TROCAR AQUI QUANDO GATEWAY ESTIVER PRONTO**
+      // =====================================================
+
+      showNotification('success', 'Senha alterada com sucesso!');
+      setTimeout(() => navigate('/login'), 1500);
+    } catch (error) {
+      showNotification('error', 'Erro ao alterar senha. Tente novamente.');
+    }
   };
 
   return (
     <div className={styles.authPage}>
-      <div style={{ width: '100%', maxWidth: 960, padding: 16 }}>
-        <div style={{ display: 'flex', gap: 32, alignItems: 'flex-start', justifyContent: 'center' }}>
+      <div className={styles.authContainer}>
+        <div className={styles.authLayout}>
           <div className={styles.loginWrapper}>
             <Form
               title="Alterar senha"
@@ -50,6 +74,13 @@ const ChangePasswordPage: React.FC = () => {
           </div>
         </div>
       </div>
+      <Modal
+        isOpen={notification.isOpen}
+        onClose={closeNotification}
+        type={notification.type}
+        message={notification.message}
+        duration={notification.type === 'success' ? 3000 : 4000}
+      />
     </div>
   );
 };

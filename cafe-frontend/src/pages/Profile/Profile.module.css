@@ -137,6 +137,12 @@
   margin-bottom: 0rem;
 }
 
+.passwordHint {
+    font-size: 0.875rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
 @media (min-width: 640px) {
   .formGrid {
     grid-template-columns: 1fr 1fr;
@@ -329,22 +335,6 @@
   background-color: #256426;
 }
 
-.successNotification {
-  position: fixed;
-  bottom: 1.25rem;
-  right: 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  border-radius: 0.5rem;
-  background-color: #4CAF50;
-  color: white;
-  padding: 1rem 1.25rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  animation: slideIn 0.3s ease-out;
-  z-index: 9999;
-}
-
 @keyframes slideIn {
   from {
     transform: translateX(100%);
@@ -354,6 +344,168 @@
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.deleteModal {
+  background: white;
+  border-radius: 1rem;
+  padding: 2.5rem;
+  max-width: 450px;
+  width: 100%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modalHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.warningIcon {
+  color: #d81b60;
+  font-size: 3.5rem;
+  background: rgba(216, 27, 96, 0.1);
+  width: 5rem;
+  height: 5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.modalTitle {
+  color: #131613;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.015em;
+}
+
+.modalContent {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.modalText {
+  color: #4b5563;
+  margin: 0 0 1rem 0;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+.modalText strong {
+  color: #131613;
+  font-weight: 600;
+}
+
+.modalWarning {
+  color: #d81b60;
+  font-weight: 600;
+  margin: 0;
+  font-size: 0.875rem;
+  background: rgba(216, 27, 96, 0.05);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border-left: 3px solid #d81b60;
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.modalCancel {
+  padding: 0.75rem 1.5rem;
+  border: 2px solid #dee3de;
+  background: white;
+  color: #131613;
+  border-radius: 0.625rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+
+.modalCancel:hover {
+  background: #f6f8f6;
+  border-color: #c7ccc7;
+  transform: translateY(-1px);
+}
+
+.modalConfirm {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background: linear-gradient(135deg, #d81b60 0%, #c2185b 100%);
+  color: white;
+  border-radius: 0.625rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+  box-shadow: 0 2px 8px rgba(216, 27, 96, 0.25);
+}
+
+.modalConfirm:hover {
+  background: linear-gradient(135deg, #c2185b 0%, #ad1457 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(216, 27, 96, 0.35);
+}
+
+.modalConfirm:active {
+  transform: translateY(0);
 }
 
 @media (max-width: 768px) {
@@ -378,5 +530,29 @@
 
   .title {
     font-size: 1.875rem;
+  }
+  
+  .deleteModal {
+    padding: 2rem;
+    max-width: 380px;
+  }
+
+  .warningIcon {
+    font-size: 3rem;
+    width: 4.5rem;
+    height: 4.5rem;
+  }
+
+  .modalTitle {
+    font-size: 1.375rem;
+  }
+
+  .modalActions {
+    flex-direction: column-reverse;
+  }
+
+  .modalCancel,
+  .modalConfirm {
+    width: 100%;
   }
 }

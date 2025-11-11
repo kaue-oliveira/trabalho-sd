@@ -1,14 +1,20 @@
 import React from 'react';
 import styles from './Sidebar.module.css';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
-interface SidebarProps {
-  userName?: string;
-}
-
-const Sidebar: React.FC<SidebarProps> = ({ userName = "Gabriel" }) => {
+const Sidebar: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  
+  const userName = user?.nome || "Usuário";
   const userInitial = userName.charAt(0).toUpperCase();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   return (
     <aside className={styles.sidebar}>
@@ -72,10 +78,10 @@ const Sidebar: React.FC<SidebarProps> = ({ userName = "Gabriel" }) => {
           <p className={styles.profileName}>{userName}</p>
         </Link>
 
-        <Link to="/" className={styles.navLink}>
+        <button onClick={handleLogout} className={styles.navLink} >
           <i className={`${styles.materialIcon} ${styles.icon}`}>logout</i>
           <p className={styles.navText}>Sair</p>
-        </Link>
+        </button>
       </div>
     </aside>
   );

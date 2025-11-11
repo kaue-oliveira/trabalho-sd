@@ -1,30 +1,144 @@
 import React, { useState } from 'react';
 import styles from './NewAnalysis.module.css';
 import Sidebar from '../../Components/Sidebar/Sidebar';
+import Modal from '../../Components/Modal/Modal';
+import { useNotification } from '../../hooks/useNotification';
+import { analysisValidations } from '../../utils/Validations';
 
 const NewAnalysis: React.FC = () => {
-  const [coffeeType, setCoffeeType] = useState('');
-  const [variety, setVariety] = useState('');
-  const [harvestDate, setHarvestDate] = useState('2024-10-05');
-  const [location, setLocation] = useState('');
-  const [stock, setStock] = useState('');
-  const [quality, setQuality] = useState('');
+  const { notification, showNotification, closeNotification } = useNotification();
 
-  const handleAnalyze = () => {
-    console.log('Analisando...', {
-      coffeeType,
-      variety,
-      harvestDate,
-      location,
-      stock,
-      quality
-    });
-    // lógica de análise
+  const [formData, setFormData] = useState({
+    tipo_cafe: '',
+    data_colheita: '',
+    quantidade: '',
+    cidade: '',
+    estado: '',
+    estado_cafe: ''
+  });
+
+  const [analysisResult, setAnalysisResult] = useState<{
+    decisao: string;
+    explicacao_decisao: string;
+    preco_mercado?: string;
+    previsao_clima?: string;
+  } | null>(null);
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSaveAnalysis = () => {
-    console.log('Salvando análise...');
-    // lógica de salvar
+  const handleAnalyze = async () => {
+    if (!formData.tipo_cafe || !formData.data_colheita || !formData.quantidade ||
+      !formData.cidade || !formData.estado || !formData.estado_cafe) {
+      showNotification('error', 'Todos os campos são obrigatórios.');
+      return;
+    }
+
+    const validation = analysisValidations.validateAnalysis({
+      tipo_cafe: formData.tipo_cafe,
+      cidade: formData.cidade,
+      estado: formData.estado,
+      quantidade: formData.quantidade
+    });
+
+    if (!validation.isValid) {
+      showNotification('error', validation.message!);
+      return;
+    }
+
+    console.log('Enviando dados para análise:', formData);
+
+    try {
+      // =====================================================
+      // **TROCAR AQUI QUANDO GATEWAY/IA ESTIVER PRONTO**
+      // =====================================================
+      // Simulando resposta da IA
+      const mockAnalysisResult = {
+        decisao: 'VENDER',
+        explicacao_decisao: 'Preço do Arábica em alta de 8% no mercado futuro. Previsão de chuva intensa na região pode comprometer qualidade do grão armazenado. Relatórios indicam baixa oferta nos próximos 30 dias."',
+        preco_mercado: 'R$ 4,50/kg (+8,1%)',
+        previsao_clima: 'Desfavorável'
+      };
+
+      setAnalysisResult(mockAnalysisResult);
+      showNotification('success', 'Análise concluída com sucesso!');
+
+    } catch (error) {
+      showNotification('error', 'Erro ao realizar análise. Tente novamente.');
+    }
+  };
+
+  const handleSaveAnalysis = async () => {
+    if (!analysisResult) {
+      showNotification('error', 'Realize uma análise antes de salvar.');
+      return;
+    }
+
+    try {
+      // =====================================================
+      // **TROCAR AQUI QUANDO GATEWAY ESTIVER PRONTO**
+      // =====================================================
+      const analysisToSave = {
+        ...formData,
+        quantidade: parseFloat(formData.quantidade),
+        data_analise: new Date().toISOString().split('T')[0], // Data atual
+        ...analysisResult
+      };
+
+      console.log('Salvando análise:', analysisToSave);
+
+      // const response = await fetch('http://localhost:3000/analises', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Authorization': `Bearer ${token}`,
+      //     'Content-Type': 'application/json'
+      //   },
+      //   body: JSON.stringify(analysisToSave)
+      // });
+
+      showNotification('success', 'Análise salva com sucesso!');
+
+      // Limpar formulário após salvar
+      setFormData({
+        tipo_cafe: '',
+        data_colheita: '',
+        quantidade: '',
+        cidade: '',
+        estado: '',
+        estado_cafe: ''
+      });
+      setAnalysisResult(null);
+
+    } catch (error) {
+      showNotification('error', 'Erro ao salvar análise. Tente novamente.');
+    }
+  };
+
+  const getDecisionBadgeClass = (decisao: string) => {
+    switch (decisao) {
+      case 'VENDER':
+        return styles.sellBadge;
+      case 'VENDER_PARCIALMENTE':
+        return styles.partialSellBadge;
+      case 'AGUARDAR':
+        return styles.waitBadge;
+      default:
+        return styles.sellBadge;
+    }
+  };
+
+  const getDecisionText = (decisao: string) => {
+    switch (decisao) {
+      case 'VENDER':
+        return 'VENDER';
+      case 'VENDER_PARCIALMENTE':
+        return 'VENDER PARCIALMENTE';
+      case 'AGUARDAR':
+        return 'AGUARDAR';
+      default:
+        return 'VENDER';
+    }
   };
 
   return (
@@ -44,86 +158,116 @@ const NewAnalysis: React.FC = () => {
             <div className={styles.grid}>
               <div className={styles.formPanel}>
                 <form className={styles.form}>
-                  <div className={styles.row}>
-                    <label className={styles.field}>
-                      <p className={styles.label}>Tipo de Café</p>
-                      <select 
-                        className={styles.select}
-                        value={coffeeType}
-                        onChange={(e) => setCoffeeType(e.target.value)}
-                      >
-                        <option value="">Selecione o tipo de café</option>
-                        <option value="Arabica">Arábica</option>
-                        <option value="Robusta">Robusta</option>
-                      </select>
-                    </label>
-                    
-                    <label className={styles.field}>
-                      <p className={styles.label}>Variedade</p>
-                      <select 
-                        className={styles.select}
-                        value={variety}
-                        onChange={(e) => setVariety(e.target.value)}
-                      >
-                        <option value="">Selecione a variedade</option>
-                        <option value="Typica">Typica</option>
-                        <option value="Bourbon">Bourbon</option>
-                        <option value="Gesha">Gesha</option>
-                      </select>
-                    </label>
-                  </div>
+                  <label className={styles.field}>
+                    <p className={styles.label}>Tipo de Café *</p>
+                    <select
+                      className={styles.select}
+                      value={formData.tipo_cafe}
+                      onChange={(e) => handleInputChange('tipo_cafe', e.target.value)}
+                      required
+                    >
+                      <option value="">Selecione o tipo de café</option>
+                      <option value="Arábica">Arábica</option>
+                      <option value="Robusta">Robusta</option>
+                    </select>
+                  </label>
 
                   <label className={styles.field}>
-                    <p className={styles.label}>Data da Colheita</p>
+                    <p className={styles.label}>Data da Colheita *</p>
                     <div className={styles.inputWrapper}>
-                      <input 
+                      <input
                         className={styles.input}
-                        type="date" 
-                        value={harvestDate}
-                        onChange={(e) => setHarvestDate(e.target.value)}
+                        type="date"
+                        value={formData.data_colheita}
+                        onChange={(e) => handleInputChange('data_colheita', e.target.value)}
+                        required
                       />
                     </div>
                   </label>
 
                   <div className={styles.row}>
                     <label className={styles.field}>
-                      <p className={styles.label}>Localização</p>
-                      <input 
+                      <p className={styles.label}>Quantidade (kg) *</p>
+                      <input
                         className={styles.input}
                         type="text"
-                        placeholder="Ex: Minas Gerais, Brasil"
-                        value={location}
-                        onChange={(e) => setLocation(e.target.value)}
+                        placeholder="Ex: 5000"
+                        value={formData.quantidade}
+                        onChange={(e) => handleInputChange('quantidade', e.target.value)}
+                        required
                       />
                     </label>
-                    
-                    <label className={styles.stockField}>
-                      <p className={styles.label}>Estoque (kg)</p>
-                      <input 
-                        className={styles.input}
-                        type="number"
-                        placeholder="Ex: 5000"
-                        value={stock}
-                        onChange={(e) => setStock(e.target.value)}
-                      />
+
+                    <label className={styles.field}>
+                      <p className={styles.label}>Estado do Café *</p>
+                      <select
+                        className={styles.select}
+                        value={formData.estado_cafe}
+                        onChange={(e) => handleInputChange('estado_cafe', e.target.value)}
+                        required
+                      >
+                        <option value="">Selecione o estado</option>
+                        <option value="verde">Verde</option>
+                        <option value="torrado">Torrado</option>
+                        <option value="moído">Moído</option>
+                      </select>
                     </label>
                   </div>
 
-                  <label className={styles.field}>
-                    <p className={styles.label}>Qualidade</p>
-                    <select 
-                      className={styles.select}
-                      value={quality}
-                      onChange={(e) => setQuality(e.target.value)}
-                    >
-                      <option value="">Selecione a qualidade</option>
-                      <option value="Specialty Grade">Grau Especial</option>
-                      <option value="Premium Grade">Grau Premium</option>
-                      <option value="Commercial Grade">Grau Comercial</option>
-                    </select>
-                  </label>
+                  <div className={styles.row}>
+                    <label className={styles.field}>
+                      <p className={styles.label}>Cidade *</p>
+                      <input
+                        className={styles.input}
+                        type="text"
+                        placeholder="Ex: Varginha"
+                        value={formData.cidade}
+                        onChange={(e) => handleInputChange('cidade', e.target.value)}
+                        required
+                      />
+                    </label>
 
-                  <button 
+                    <label className={styles.field}>
+                      <p className={styles.label}>Estado (UF) *</p>
+                      <select
+                        className={styles.select}
+                        value={formData.estado}
+                        onChange={(e) => handleInputChange('estado', e.target.value)}
+                        required
+                      >
+                        <option value="">Selecione o estado</option>
+                        <option value="AC">AC</option>
+                        <option value="AL">AL</option>
+                        <option value="AP">AP</option>
+                        <option value="AM">AM</option>
+                        <option value="BA">BA</option>
+                        <option value="CE">CE</option>
+                        <option value="DF">DF</option>
+                        <option value="ES">ES</option>
+                        <option value="GO">GO</option>
+                        <option value="MA">MA</option>
+                        <option value="MT">MT</option>
+                        <option value="MS">MS</option>
+                        <option value="MG">MG</option>
+                        <option value="PA">PA</option>
+                        <option value="PB">PB</option>
+                        <option value="PR">PR</option>
+                        <option value="PE">PE</option>
+                        <option value="PI">PI</option>
+                        <option value="RJ">RJ</option>
+                        <option value="RN">RN</option>
+                        <option value="RS">RS</option>
+                        <option value="RO">RO</option>
+                        <option value="RR">RR</option>
+                        <option value="SC">SC</option>
+                        <option value="SP">SP</option>
+                        <option value="SE">SE</option>
+                        <option value="TO">TO</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <button
                     className={styles.analyzeButton}
                     type="button"
                     onClick={handleAnalyze}
@@ -135,61 +279,72 @@ const NewAnalysis: React.FC = () => {
 
               <div className={styles.resultsPanel}>
                 <div className={styles.resultsContent}>
-                  <div className={styles.resultSection}>
-                    <div className={styles.resultHeader}>
-                      <span className={styles.resultBadge}>VENDER</span>
-                    </div>
-                    
-                    <div className={styles.recommendation}>
-                      <h3 className={styles.recommendationTitle}>Recomendação da IA</h3>
-                      <p className={styles.recommendationText}>
-                        Com base na alta dos preços de mercado para grãos Arábica e nas previsões
-                        climáticas favoráveis que garantem estabilidade na oferta, vender agora é
-                        recomendado para maximizar o lucro. É previsto um leve declínio no próximo
-                        trimestre devido ao aumento de colheitas em regiões concorrentes.
-                      </p>
-                    </div>
+                  {analysisResult ? (
+                    <div className={styles.resultSection}>
+                      <div className={styles.resultHeader}>
+                        <div className={`${styles.resultBadge} ${getDecisionBadgeClass(analysisResult.decisao)}`}>
+                          {getDecisionText(analysisResult.decisao)}
+                        </div>
+                      </div>
 
-                    <div className={styles.statsGrid}>
-                      <div className={styles.statCard}>
-                        <p className={styles.statLabel}>Preço de Mercado</p>
-                        <p className={styles.statValue}>
-                          R$ 4,50/kg <span className={styles.positiveChange}>(+2,3%)</span>
+                      <div className={styles.recommendation}>
+                        <h3 className={styles.recommendationTitle}>Recomendação da IA</h3>
+                        <p className={styles.recommendationText}>
+                          {analysisResult.explicacao_decisao}
                         </p>
                       </div>
-                      <div className={styles.statCard}>
-                        <p className={styles.statLabel}>Previsão do Clima</p>
-                        <p className={styles.statValue}>Favorável</p>
+
+                      {(analysisResult.preco_mercado || analysisResult.previsao_clima) && (
+                        <div className={styles.statsGrid}>
+                          {analysisResult.preco_mercado && (
+                            <div className={styles.statCard}>
+                              <p className={styles.statLabel}>Preço de Mercado</p>
+                              <p className={styles.statValue}>
+                                {analysisResult.preco_mercado}
+                              </p>
+                            </div>
+                          )}
+                          {analysisResult.previsao_clima && (
+                            <div className={styles.statCard}>
+                              <p className={styles.statLabel}>Previsão do Clima</p>
+                              <p className={styles.statValue}>{analysisResult.previsao_clima}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className={styles.saveSection}>
+                        <button
+                          className={styles.saveButton}
+                          type="button"
+                          onClick={handleSaveAnalysis}
+                        >
+                          Salvar Análise
+                        </button>
                       </div>
                     </div>
-
-                    <div className={styles.chartSection}>
-                      <h3 className={styles.chartTitle}>Tendência de Preços (30 dias)</h3>
-                      <div className={styles.chartContainer}>
-                        <img 
-                          src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFCjSEy5O5EXJAB99TcvRNqQ2QGgRy52OAJxPGhFgrJ7hUfZqkCRI_xcE7zWMsNfzotwiRqYnPplIDm1md1cyH7EPRl0AP6tdovAszkXt2WKbDfb4eW0h6GcopqO9jE_DjG5IVzMwxRKHUKzJhu5nRxbDNysOj1U1I9S7d11sWtuifajYj4bWUcnqCvEWEqwKJwLhvQ4tGmhEgS91KvxwSSP38OpMvhwSQL6AyzybZyY3b6s-LYjr5xw5KA71cE1R5KlOlWyTmiKI" 
-                          alt="Gráfico de linha mostrando tendência de alta nos preços do café nos últimos 30 dias."
-                          className={styles.chartImage}
-                        />
-                      </div>
+                  ) : (
+                    <div className={styles.emptyState}>
+                      <i className={`${styles.materialIcon} ${styles.emptyStateIcon}`}>analytics</i>
+                      <h3 className={styles.emptyStateTitle}>Análise Pendente</h3>
+                      <p className={styles.emptyStateText}>
+                        Preencha o formulário ao lado e clique em "ANALISAR" para receber uma recomendação de venda baseada em IA.
+                      </p>
                     </div>
-
-                    <div className={styles.saveSection}>
-                      <button 
-                        className={styles.saveButton}
-                        type="button"
-                        onClick={handleSaveAnalysis}
-                      >
-                        Salvar Análise
-                      </button>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         </main>
       </div>
+      <Modal
+        isOpen={notification.isOpen}
+        onClose={closeNotification}
+        type={notification.type}
+        message={notification.message}
+        duration={notification.type === 'success' ? 3000 : 4000}
+      />
     </div>
   );
 };

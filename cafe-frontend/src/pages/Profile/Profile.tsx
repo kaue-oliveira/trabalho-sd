@@ -1,24 +1,32 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../Components/Sidebar/Sidebar';
+import Modal from '../../Components/Modal/Modal';
+import { useAuth } from '../../context/AuthContext';
+import { profileValidations } from '../../utils/Validations';
+import { useNotification } from '../../hooks/useNotification';
 import styles from './Profile.module.css';
 
 const Profile: React.FC = () => {
     const navigate = useNavigate();
-    const userName = "Gabriel";
-    const userInitial = userName.charAt(0).toUpperCase();
-    const userEmail = "gabriel.fazendeiro@exemplo.com";
+    const { user, logout } = useAuth();
+    const { notification, showNotification, closeNotification } = useNotification();
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-    const [showSuccess, setShowSuccess] = useState(false);
+    const userName = user?.nome || "Usuário";
+    const userEmail = user?.email || "email@exemplo.com";
+    const userInitial = userName.charAt(0).toUpperCase();
+    const accountType = user?.tipo_conta === "PRODUTOR" ? "Produtor" : "Cooperativa";
+
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+    
     const [formData, setFormData] = useState({
-        fullName: 'Gabriel',
-        email: 'gabriel.fazendeiro@exemplo.com',
+        fullName: userName,
+        email: userEmail,
         newPassword: '',
         confirmPassword: '',
-        accountType: 'Fazendeiro'
+        accountType: accountType
     });
 
     const handleChange = (field: string, value: string) => {
@@ -27,16 +35,73 @@ const Profile: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        const validation = profileValidations.validateProfile(formData);
+        
+        if (!validation.isValid) {
+            showNotification('error', validation.message!);
+            return;
+        }
+
+        // Verificar se houve mudanças reais
+        const hasChanges =
+            formData.fullName !== userName ||
+            formData.email !== userEmail ||
+            formData.accountType !== accountType ||
+            formData.newPassword !== '';
+
+        if (!hasChanges) {
+            showNotification('info', 'Nenhuma alteração foi feita.');
+            return;
+        }
+
         console.log('Dados do perfil salvos:', formData);
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
+        showNotification('success', 'Perfil atualizado com sucesso!');
+
+        // =====================================================
+        // **TROCAR AQUI QUANDO GATEWAY ESTIVER PRONTO**
+        // =====================================================
+        // const updateData = {
+        //   nome: formData.fullName,
+        //   email: formData.email,
+        //   senha: formData.newPassword || undefined,
+        //   tipo_conta: formData.accountType.toUpperCase()
+        // };
+        // 
+        // const response = await fetch('http://localhost:3000/usuarios/me', {
+        //   method: 'PUT',
+        //   headers: {
+        //     'Authorization': `Bearer ${token}`,
+        //     'Content-Type': 'application/json'
+        //   },
+        //   body: JSON.stringify(updateData)
+        // });
+        // =====================================================
     };
 
     const handleDeleteAccount = () => {
-        if (window.confirm('Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.')) {
-            console.log('Conta excluída');
-            navigate('/');
-        }
+        setShowDeleteModal(true);
+    };
+
+    const confirmDeleteAccount = () => {
+        setShowDeleteModal(false);
+        // =====================================================
+        // **TROCAR AQUI QUANDO GATEWAY ESTIVER PRONTO**
+        // =====================================================
+        // const response = await fetch('http://localhost:3000/usuarios/me', {
+        //   method: 'DELETE',
+        //   headers: {
+        //     'Authorization': `Bearer ${token}`
+        //   }
+        // });
+        // =====================================================
+
+        console.log('Conta excluída');
+        logout();
+        navigate('/');
+    };
+
+    const cancelDeleteAccount = () => {
+        setShowDeleteModal(false);
     };
 
     const handleCancel = () => {
@@ -46,7 +111,7 @@ const Profile: React.FC = () => {
 
     return (
         <div className={styles.container}>
-            <Sidebar userName={userName} />
+            <Sidebar />
 
             <main className={styles.mainContent}>
                 <div className={styles.contentContainer}>
@@ -63,7 +128,9 @@ const Profile: React.FC = () => {
                                 <div className={styles.profileInfo}>
                                     <h2 className={styles.userName}>{userName}</h2>
                                     <p className={styles.userEmail}>{userEmail}</p>
-                                    <div className={styles.userBadge}>Fazendeiro</div>
+                                    <div className={styles.userBadge}>
+                                        {accountType}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -99,7 +166,6 @@ const Profile: React.FC = () => {
                                     </div>
                                 </label>
 
-
                                 <div className={styles.formGrid}>
                                     <label className={styles.inputLabel}>
                                         <p className={styles.labelText}>Nova Senha</p>
@@ -123,6 +189,11 @@ const Profile: React.FC = () => {
                                                 </i>
                                             </button>
                                         </div>
+                                        {formData.newPassword && (
+                                            <p className={styles.passwordHint}>
+                                                Deixe em branco para manter a senha atual
+                                            </p>
+                                        )}
                                     </label>
 
                                     <label className={styles.inputLabel}>
@@ -159,7 +230,7 @@ const Profile: React.FC = () => {
                                             value={formData.accountType}
                                             onChange={(e) => handleChange('accountType', e.target.value)}
                                         >
-                                            <option value="Fazendeiro">Fazendeiro</option>
+                                            <option value="Produtor">Produtor</option>
                                             <option value="Cooperativa">Cooperativa</option>
                                         </select>
                                         <i className={`${styles.materialIcon} ${styles.iconRight}`}>expand_more</i>
@@ -196,12 +267,49 @@ const Profile: React.FC = () => {
                         </div>
                     </div>
 
-                    {showSuccess && (
-                        <div className={styles.successNotification}>
-                            <i className={`${styles.materialIcon} ${styles.successIcon}`}>check_circle</i>
-                            <p className={styles.successText}>Perfil atualizado com sucesso!</p>
+                    {showDeleteModal && (
+                        <div className={styles.modalOverlay}>
+                            <div className={styles.deleteModal}>
+                                <div className={styles.modalHeader}>
+                                    <i className={`${styles.materialIcon} ${styles.warningIcon}`}>warning</i>
+                                    <h3 className={styles.modalTitle}>Excluir Conta</h3>
+                                </div>
+                                
+                                <div className={styles.modalContent}>
+                                    <p className={styles.modalText}>
+                                        Tem certeza que deseja excluir sua conta? 
+                                        <strong> Todos os seus dados e análises serão perdidos permanentemente.</strong>
+                                    </p>
+                                    <p className={styles.modalWarning}>
+                                        Esta ação não pode ser desfeita.
+                                    </p>
+                                </div>
+
+                                <div className={styles.modalActions}>
+                                    <button
+                                        className={styles.modalCancel}
+                                        onClick={cancelDeleteAccount}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        className={styles.modalConfirm}
+                                        onClick={confirmDeleteAccount}
+                                    >
+                                        Sim, Excluir Conta
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     )}
+
+                    <Modal
+                        isOpen={notification.isOpen}
+                        onClose={closeNotification}
+                        type={notification.type}
+                        message={notification.message}
+                        duration={notification.type === 'success' ? 3000 : 4000}
+                    />
                 </div>
             </main>
         </div>
