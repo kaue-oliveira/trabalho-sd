@@ -150,7 +150,7 @@ const HistoricAnalyses: React.FC = () => {
   const [dateFilter, setDateFilter] = useState('');
   const [coffeeTypeFilter, setCoffeeTypeFilter] = useState('');
   const [decisionFilter, setDecisionFilter] = useState('');
-  const perPage = 5;
+  const perPage = 7;
 
   const { analisesUsuario } = useAuth();
 

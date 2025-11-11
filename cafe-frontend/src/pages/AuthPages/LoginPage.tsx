@@ -1,29 +1,33 @@
 import React, { useState } from 'react';
 import Form from '../../Components/Form/Form';
 import type { FormField } from '../../Components/Form/Form';
+import Modal from '../../Components/Modal/Modal';
 import styles from './AuthPages.module.css';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { loginValidations } from '../../utils/Validations';
+import { useNotification } from '../../hooks/useNotification';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const { notification, showNotification, closeNotification } = useNotification();
 
   const fields: FormField[] = [
-    { 
-      name: 'email', 
-      label: 'E-mail', 
-      type: 'email', 
-      placeholder: 'seu@email.com', 
-      icon: 'email' 
+    {
+      name: 'email',
+      label: 'E-mail',
+      type: 'email',
+      placeholder: 'seu@email.com',
+      icon: 'email'
     },
-    { 
-      name: 'password', 
-      label: 'Senha', 
-      type: 'password', 
-      placeholder: '••••••••', 
-      icon: 'lock', 
+    {
+      name: 'password',
+      label: 'Senha',
+      type: 'password',
+      placeholder: '••••••••',
+      icon: 'lock',
       showPasswordToggle: true,
       helperText: (
         <div className={styles.forgotPasswordContainer}>
@@ -35,14 +39,22 @@ const LoginPage: React.FC = () => {
     }
   ];
 
-  const handleSubmit = async (data: Record<string,string>) => {
+  const handleSubmit = async (data: Record<string, string>) => {
+    const validation = loginValidations.validateLogin(data.email, data.password);
+
+    if (!validation.isValid) {
+      showNotification('error', validation.message!);
+      return;
+    }
+
     setLoading(true);
     const result = await login(data.email, data.password);
-    
+
     if (result.success) {
-      navigate('/painel-de-controle');
+      showNotification('success', 'Login realizado com sucesso!');
+      setTimeout(() => navigate('/painel-de-controle'), 1000);
     } else {
-      alert(result.error);
+      showNotification('error', result.error || 'Erro ao fazer login');
     }
     setLoading(false);
   };
@@ -70,6 +82,13 @@ const LoginPage: React.FC = () => {
           </div>
         </div>
       </div>
+      <Modal
+        isOpen={notification.isOpen}
+        onClose={closeNotification}
+        type={notification.type}
+        message={notification.message}
+        duration={notification.type === 'success' ? 3000 : 4000}
+      />
     </div>
   );
 };

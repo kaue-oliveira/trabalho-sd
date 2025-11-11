@@ -1,57 +1,82 @@
 import Form from '../../Components/Form/Form';
 import type { FormField } from '../../Components/Form/Form';
+import Modal from '../../Components/Modal/Modal';
 import styles from './AuthPages.module.css';
 import { useNavigate } from 'react-router-dom';
+import { registerValidations } from '../../utils/Validations';
+import { useNotification } from '../../hooks/useNotification';
 
 const RegistrationPage: React.FC = () => {
   const navigate = useNavigate();
+  const { notification, showNotification, closeNotification } = useNotification();
 
   const fields: FormField[] = [
-    { 
-      name: 'fullName', 
-      label: 'Nome Completo', 
-      type: 'text', 
-      placeholder: 'Seu nome completo', 
-      icon: 'person' 
+    {
+      name: 'fullName',
+      label: 'Nome Completo',
+      type: 'text',
+      placeholder: 'Seu nome completo',
+      icon: 'person'
     },
-    { 
-      name: 'email', 
-      label: 'E-mail', 
-      type: 'email', 
-      placeholder: 'seu@email.com', 
-      icon: 'mail' 
+    {
+      name: 'email',
+      label: 'E-mail',
+      type: 'email',
+      placeholder: 'seu@email.com',
+      icon: 'mail'
     },
-    { 
-      name: 'password', 
-      label: 'Senha', 
-      type: 'password', 
-      placeholder: '••••••••', 
-      icon: 'lock', 
+    {
+      name: 'password',
+      label: 'Senha',
+      type: 'password',
+      placeholder: '••••••••',
+      icon: 'lock',
       showPasswordToggle: true,
       helperText: 'Use pelo menos 8 caracteres com letras e números'
     },
-    { 
-      name: 'confirmPassword', 
-      label: 'Confirmar Senha', 
-      type: 'password', 
-      placeholder: '••••••••', 
-      icon: 'lock', 
-      showPasswordToggle: true 
+    {
+      name: 'confirmPassword',
+      label: 'Confirmar Senha',
+      type: 'password',
+      placeholder: '••••••••',
+      icon: 'lock',
+      showPasswordToggle: true
     },
-    { 
-      name: 'accountType', 
-      label: 'Tipo de Conta', 
-      type: 'select', 
-      placeholder: '', 
+    {
+      name: 'accountType',
+      label: 'Tipo de Conta',
+      type: 'select',
+      placeholder: '',
       icon: 'group',
-      options: ['Produtor', 'Cooperativa'] 
+      options: ['Produtor', 'Cooperativa']
     }
   ];
 
   const handleSubmit = async (data: Record<string, string>) => {
-    console.log('Dados do cadastro:', data);
-    // chama API de cadastro
-    navigate('/login');
+    const validation = registerValidations.validateRegister({
+      fullName: data.fullName,
+      email: data.email,
+      password: data.password,
+      confirmPassword: data.confirmPassword
+    });
+
+    if (!validation.isValid) {
+      showNotification('error', validation.message!);
+      return;
+    }
+
+    try {
+      console.log('Dados do cadastro:', data);
+
+      // =====================================================
+      // **TROCAR AQUI QUANDO GATEWAY ESTIVER PRONTO**
+      // =====================================================
+
+      showNotification('success', 'Cadastro realizado com sucesso!');
+      setTimeout(() => navigate('/login'), 1500);
+    } catch (error) {
+      showNotification('error', 'Erro ao realizar cadastro. Tente novamente.');
+    }
   };
 
   return (
@@ -78,6 +103,13 @@ const RegistrationPage: React.FC = () => {
           showLogo={false}
         />
       </div>
+      <Modal
+        isOpen={notification.isOpen}
+        onClose={closeNotification}
+        type={notification.type}
+        message={notification.message}
+        duration={notification.type === 'success' ? 3000 : 4000}
+      />
     </div>
   );
 };

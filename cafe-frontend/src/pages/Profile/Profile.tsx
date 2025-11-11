@@ -1,22 +1,26 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../Components/Sidebar/Sidebar';
+import Modal from '../../Components/Modal/Modal';
 import { useAuth } from '../../context/AuthContext';
+import { profileValidations } from '../../utils/Validations';
+import { useNotification } from '../../hooks/useNotification';
 import styles from './Profile.module.css';
 
 const Profile: React.FC = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
-    
+    const { notification, showNotification, closeNotification } = useNotification();
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+
     const userName = user?.nome || "Usuário";
     const userEmail = user?.email || "email@exemplo.com";
     const userInitial = userName.charAt(0).toUpperCase();
     const accountType = user?.tipo_conta === "PRODUTOR" ? "Produtor" : "Cooperativa";
 
-    const [showSuccess, setShowSuccess] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+    
     const [formData, setFormData] = useState({
         fullName: userName,
         email: userEmail,
@@ -31,14 +35,28 @@ const Profile: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        const validation = profileValidations.validateProfile(formData);
         
-        if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
-            alert("As senhas não coincidem!");
+        if (!validation.isValid) {
+            showNotification('error', validation.message!);
             return;
         }
-        
+
+        // Verificar se houve mudanças reais
+        const hasChanges =
+            formData.fullName !== userName ||
+            formData.email !== userEmail ||
+            formData.accountType !== accountType ||
+            formData.newPassword !== '';
+
+        if (!hasChanges) {
+            showNotification('info', 'Nenhuma alteração foi feita.');
+            return;
+        }
+
         console.log('Dados do perfil salvos:', formData);
-        
+        showNotification('success', 'Perfil atualizado com sucesso!');
+
         // =====================================================
         // **TROCAR AQUI QUANDO GATEWAY ESTIVER PRONTO**
         // =====================================================
@@ -46,7 +64,7 @@ const Profile: React.FC = () => {
         //   nome: formData.fullName,
         //   email: formData.email,
         //   senha: formData.newPassword || undefined,
-        //   tipo_conta: formData.accountType.toUpperCase() // ✅ **ENVIAR TIPO DE CONTA**
+        //   tipo_conta: formData.accountType.toUpperCase()
         // };
         // 
         // const response = await fetch('http://localhost:3000/usuarios/me', {
@@ -58,29 +76,32 @@ const Profile: React.FC = () => {
         //   body: JSON.stringify(updateData)
         // });
         // =====================================================
-        
-        // **CÓDIGO MOCKADO - MANTER POR ENQUANTO**
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
     };
 
     const handleDeleteAccount = () => {
-        if (window.confirm('Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.')) {
-            // =====================================================
-            // **TROCAR AQUI QUANDO GATEWAY ESTIVER PRONTO**
-            // =====================================================
-            // const response = await fetch('http://localhost:3000/usuarios/me', {
-            //   method: 'DELETE',
-            //   headers: {
-            //     'Authorization': `Bearer ${token}`
-            //   }
-            // });
-            // =====================================================
-            
-            console.log('Conta excluída');
-            logout();
-            navigate('/');
-        }
+        setShowDeleteModal(true);
+    };
+
+    const confirmDeleteAccount = () => {
+        setShowDeleteModal(false);
+        // =====================================================
+        // **TROCAR AQUI QUANDO GATEWAY ESTIVER PRONTO**
+        // =====================================================
+        // const response = await fetch('http://localhost:3000/usuarios/me', {
+        //   method: 'DELETE',
+        //   headers: {
+        //     'Authorization': `Bearer ${token}`
+        //   }
+        // });
+        // =====================================================
+
+        console.log('Conta excluída');
+        logout();
+        navigate('/');
+    };
+
+    const cancelDeleteAccount = () => {
+        setShowDeleteModal(false);
     };
 
     const handleCancel = () => {
@@ -197,9 +218,6 @@ const Profile: React.FC = () => {
                                                 </i>
                                             </button>
                                         </div>
-                                        {formData.newPassword !== formData.confirmPassword && formData.confirmPassword && (
-                                            <p className={styles.passwordError}>As senhas não coincidem</p>
-                                        )}
                                     </label>
                                 </div>
 
@@ -249,12 +267,49 @@ const Profile: React.FC = () => {
                         </div>
                     </div>
 
-                    {showSuccess && (
-                        <div className={styles.successNotification}>
-                            <i className={`${styles.materialIcon} ${styles.successIcon}`}>check_circle</i>
-                            <p className={styles.successText}>Perfil atualizado com sucesso!</p>
+                    {showDeleteModal && (
+                        <div className={styles.modalOverlay}>
+                            <div className={styles.deleteModal}>
+                                <div className={styles.modalHeader}>
+                                    <i className={`${styles.materialIcon} ${styles.warningIcon}`}>warning</i>
+                                    <h3 className={styles.modalTitle}>Excluir Conta</h3>
+                                </div>
+                                
+                                <div className={styles.modalContent}>
+                                    <p className={styles.modalText}>
+                                        Tem certeza que deseja excluir sua conta? 
+                                        <strong> Todos os seus dados e análises serão perdidos permanentemente.</strong>
+                                    </p>
+                                    <p className={styles.modalWarning}>
+                                        Esta ação não pode ser desfeita.
+                                    </p>
+                                </div>
+
+                                <div className={styles.modalActions}>
+                                    <button
+                                        className={styles.modalCancel}
+                                        onClick={cancelDeleteAccount}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        className={styles.modalConfirm}
+                                        onClick={confirmDeleteAccount}
+                                    >
+                                        Sim, Excluir Conta
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     )}
+
+                    <Modal
+                        isOpen={notification.isOpen}
+                        onClose={closeNotification}
+                        type={notification.type}
+                        message={notification.message}
+                        duration={notification.type === 'success' ? 3000 : 4000}
+                    />
                 </div>
             </main>
         </div>
