@@ -1,73 +1,87 @@
-# React + TypeScript + Vite
+# Café Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend para sistema de análise inteligente de café com recomendações de venda baseadas em IA.
 
-Currently, two official plugins are available:
+## 🚀 Funcionalidades
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Autenticação & Usuário
+- **Login/Registro** - Sistema de autenticação com validações
+- **Recuperação de Senha** - Fluxo completo de redefinição
+- **Perfil do Usuário** - Edição de dados e exclusão de conta
+- **Tipos de Conta** - Produtor ou Cooperativa
 
-## React Compiler
+### Análises de Café
+- **Nova Análise** - Formulário com dados da safra para recomendação de venda
+- **Recomendações IA** - Decisões: VENDER, VENDER_PARCIALMENTE ou AGUARDAR
+- **Histórico** - Lista de análises anteriores salvas
+- **Dashboard** - Visão geral das análises recentes
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Dados da Análise
+- **Tipo de Café**: Arábica ou Robusta
+- **Localização**: Cidade e Estado
+- **Quantidade**: Em kg com validação
+- **Data da Colheita**: Período da safra
+- **Estado do Café**: Verde, Torrado ou Moído
 
-## Expanding the ESLint configuration
+## 🛠️ Tecnologias
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **React 19** - Biblioteca principal
+- **TypeScript** - Tipagem estática
+- **React Router DOM** - Navegação SPA
+- **Vite** - Build tool e dev server
+- **CSS Modules** - Estilização componentizada
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 📦 Estrutura do Projeto
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── Components/
+│   ├── Modal/           # Modal de notificações
+│   ├── Sidebar/         # Navegação lateral
+│   └── Form/            # Componentes de formulário
+├── context/
+│   └── AuthContext.tsx  # Gerenciamento de autenticação
+├── hooks/
+│   └── useNotification.ts # Hook para notificações
+├── pages/
+│   ├── AuthPages/       # Login, Registro, Recuperação
+│   ├── Dashboard/       # Página inicial
+│   ├── NewAnalysis/     # Nova análise
+│   ├── HistoricAnalyses/# Histórico
+│   ├── Profile/         # Perfil do usuário
+│   └── PublicHome/      # Landing page pública
+├── types/
+│   └── auth.types.ts    # Tipos TypeScript
+└── utils/
+    └── Validations.ts   # Validações de formulários
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🚀 Como Executar
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+# Instalar dependências
+yarn install
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Desenvolvimento (http://localhost:5173)
+yarn dev
+
+# Build de produção
+yarn build
+
+# Preview do build
+yarn preview
 ```
+
+## ⚠️ Status Atual
+
+**🚧 Desenvolvimento em Andamento**
+
+- ✅ **Frontend completo** com todas as páginas
+- ✅ **Sistema de autenticação** mockado funcionando
+- ✅ **Validações** de formulários implementadas
+- ❌ **Integração com backend** pendente
+- ❌ **IA real** para análises (atualmente mockada)
+
+---
+
+**Desenvolvido para Trabalho de Sistemas Distribuídos**
