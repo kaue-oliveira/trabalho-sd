@@ -31,9 +31,18 @@ const ForgotPasswordPage: React.FC = () => {
     try {
       console.log('Solicitação de redefinição enviada:', data);
 
-      // =====================================================
-      // **TROCAR AQUI QUANDO GATEWAY ESTIVER PRONTO**
-      // =====================================================
+      const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
+      const response = await fetch(`${API_BASE}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: data.email }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ detail: 'Erro' }));
+        showNotification('error', err.detail || 'Erro ao solicitar redefinição');
+        return;
+      }
 
       showNotification('success', 'Email de redefinição enviado com sucesso!');
       setTimeout(() => navigate('/login'), 2000);

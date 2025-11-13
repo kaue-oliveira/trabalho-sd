@@ -3,10 +3,12 @@ import styles from './NewAnalysis.module.css';
 import Sidebar from '../../Components/Sidebar/Sidebar';
 import Modal from '../../Components/Modal/Modal';
 import { useNotification } from '../../hooks/useNotification';
-import { analysisValidations } from '../../utils/Validations';
+import { analysisValidations, requireAuthToken } from '../../utils/Validations';
+import { useAuth } from '../../context/AuthContext'; // adicionado
 
 const NewAnalysis: React.FC = () => {
   const { notification, showNotification, closeNotification } = useNotification();
+  const { token, addAnalise } = useAuth();
 
   const [formData, setFormData] = useState({
     tipo_cafe: '',
@@ -50,6 +52,11 @@ const NewAnalysis: React.FC = () => {
     console.log('Enviando dados para análise:', formData);
 
     try {
+      const tokenCheck = requireAuthToken(token);
+      if (!tokenCheck.isValid) {
+        showNotification('error', tokenCheck.message!);
+        return;
+      }
       // =====================================================
       // **TROCAR AQUI QUANDO GATEWAY/IA ESTIVER PRONTO**
       // =====================================================
@@ -76,26 +83,42 @@ const NewAnalysis: React.FC = () => {
     }
 
     try {
-      // =====================================================
-      // **TROCAR AQUI QUANDO GATEWAY ESTIVER PRONTO**
-      // =====================================================
       const analysisToSave = {
         ...formData,
         quantidade: parseFloat(formData.quantidade),
-        data_analise: new Date().toISOString().split('T')[0], // Data atual
+        data_analise: new Date().toISOString().split('T')[0],
         ...analysisResult
       };
 
-      console.log('Salvando análise:', analysisToSave);
+      const tokenCheck = requireAuthToken(token);
+      if (!tokenCheck.isValid) {
+        showNotification('error', tokenCheck.message!);
+        return;
+      }
+      // Enviar para o gateway
+      const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
+      const response = await fetch(`${API_BASE}/analises`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(analysisToSave)
+      });
 
-      // const response = await fetch('http://localhost:3000/analises', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Authorization': `Bearer ${token}`,
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: JSON.stringify(analysisToSave)
-      // });
+      if (!response.ok) {
+        const errorText = await response.text();
+        showNotification('error', `Erro ao salvar análise: ${errorText}`);
+        return;
+      }
+
+      const saved = await response.json();
+
+      try {
+        addAnalise(saved);
+      } catch (err) {
+        console.warn('addAnalise falhou:', err);
+      }
 
       showNotification('success', 'Análise salva com sucesso!');
 

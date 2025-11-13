@@ -1,5 +1,3 @@
--- Script de inicialização do banco de dados CafeQuality
-
 -- Tabela de usuários
 CREATE TABLE IF NOT EXISTS usuarios (
     id SERIAL PRIMARY KEY,

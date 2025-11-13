@@ -19,17 +19,18 @@ const Dashboard: React.FC = () => {
     navigate('/historico-analises');
   };
 
+  // Ordenar em das mais recentes e pegar as 4 últimas
   const recentAnalyses = analisesUsuario
-    .sort((a, b) => b.id - a.id) // Ordenar por ID decrescente (mais recentes primeiro)
-    .slice(0, 4); // Pegar apenas as 4 mais recentes
+    .sort((a, b) => b.id - a.id)
+    .slice(0, 4);
 
-  // **CALCULAR ESTATÍSTICAS COM DADOS REAIS**
+  // Calcular estatísticas
   const sellNowCount = analisesUsuario.filter(a => a.decisao === "VENDER").length;
   const sellPartiallyCount = analisesUsuario.filter(a => a.decisao === "VENDER_PARCIALMENTE").length;
   const waitCount = analisesUsuario.filter(a => a.decisao === "AGUARDAR").length;
   const totalAnalises = analisesUsuario.length;
 
-  // **FORMATAR DADOS PARA A TABELA**
+  // Formatar dados para tabela
   const formatAnalysisForTable = (analise: any) => ({
     id: `AN-${analise.id.toString().padStart(3, '0')}`,
     date: new Date(analise.data_colheita).toLocaleDateString('pt-BR'),
@@ -125,6 +126,14 @@ const Dashboard: React.FC = () => {
                       </td>
                     </tr>
                   ))}
+
+                  {tableAnalyses.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className={styles.emptyMessageCell}>
+                        Nenhuma análise encontrada.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

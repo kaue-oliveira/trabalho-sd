@@ -292,3 +292,8 @@
   background-color: #fee2e2;
   color: #991b1b;
 }
+
+.emptyMessageCell {
+  text-align: center;
+  padding: 1.25rem;
+}
