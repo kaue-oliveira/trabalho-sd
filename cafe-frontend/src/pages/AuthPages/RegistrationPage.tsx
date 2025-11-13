@@ -68,9 +68,25 @@ const RegistrationPage: React.FC = () => {
     try {
       console.log('Dados do cadastro:', data);
 
-      // =====================================================
-      // **TROCAR AQUI QUANDO GATEWAY ESTIVER PRONTO**
-      // =====================================================
+      const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
+      const payload = {
+        nome: data.fullName,
+        email: data.email,
+        senha: data.password,
+        tipo_conta: (data.accountType || 'Produtor').toUpperCase()
+      };
+
+      const response = await fetch(`${API_BASE}/usuarios`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ detail: 'Erro no servidor' }));
+        showNotification('error', err.detail || 'Erro ao cadastrar');
+        return;
+      }
 
       showNotification('success', 'Cadastro realizado com sucesso!');
       setTimeout(() => navigate('/login'), 1500);

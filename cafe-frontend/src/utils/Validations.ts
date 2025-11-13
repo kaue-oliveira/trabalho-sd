@@ -312,3 +312,11 @@ export const changePasswordValidations = {
     return validators.find(validator => !validator.isValid) || { isValid: true };
   }
 };
+
+// Validação de presença de token
+export const requireAuthToken = (token: string | null | undefined): ValidationResult => {
+  if (!token) {
+    return { isValid: false, message: 'Você precisa estar autenticado.' };
+  }
+  return { isValid: true };
+};

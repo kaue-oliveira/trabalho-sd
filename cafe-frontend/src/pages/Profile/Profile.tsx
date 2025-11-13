@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../Components/Sidebar/Sidebar';
 import Modal from '../../Components/Modal/Modal';
 import { useAuth } from '../../context/AuthContext';
-import { profileValidations } from '../../utils/Validations';
+import { profileValidations, requireAuthToken } from '../../utils/Validations';
 import { useNotification } from '../../hooks/useNotification';
 import styles from './Profile.module.css';
 
 const Profile: React.FC = () => {
     const navigate = useNavigate();
-    const { user, logout } = useAuth();
+    const { user, logout, token, updateUser } = useAuth();
     const { notification, showNotification, closeNotification } = useNotification();
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -33,7 +33,7 @@ const Profile: React.FC = () => {
         setFormData({ ...formData, [field]: value });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const validation = profileValidations.validateProfile(formData);
         
@@ -54,50 +54,79 @@ const Profile: React.FC = () => {
             return;
         }
 
-        console.log('Dados do perfil salvos:', formData);
-        showNotification('success', 'Perfil atualizado com sucesso!');
+        try {
+          const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
+          const payload: any = {
+            nome: formData.fullName,
+            email: formData.email,
+            tipo_conta: formData.accountType.toUpperCase()
+          };
+          if (formData.newPassword) payload.senha = formData.newPassword;
 
-        // =====================================================
-        // **TROCAR AQUI QUANDO GATEWAY ESTIVER PRONTO**
-        // =====================================================
-        // const updateData = {
-        //   nome: formData.fullName,
-        //   email: formData.email,
-        //   senha: formData.newPassword || undefined,
-        //   tipo_conta: formData.accountType.toUpperCase()
-        // };
-        // 
-        // const response = await fetch('http://localhost:3000/usuarios/me', {
-        //   method: 'PUT',
-        //   headers: {
-        //     'Authorization': `Bearer ${token}`,
-        //     'Content-Type': 'application/json'
-        //   },
-        //   body: JSON.stringify(updateData)
-        // });
-        // =====================================================
+          const tokenCheck = requireAuthToken(token);
+          if (!tokenCheck.isValid) {
+            showNotification('error', tokenCheck.message!);
+            return;
+          }
+
+          const response = await fetch(`${API_BASE}/usuarios/me`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({ detail: 'Erro' }));
+            showNotification('error', err.detail || 'Erro ao atualizar perfil');
+            return;
+          }
+
+          const updatedUser = await response.json();
+          try { updateUser(updatedUser); } catch (err) { /* fallback silencioso */ }
+
+          showNotification('success', 'Perfil atualizado com sucesso!');
+        } catch (error) {
+          showNotification('error', 'Erro ao salvar perfil. Tente novamente.');
+        }
     };
 
     const handleDeleteAccount = () => {
         setShowDeleteModal(true);
     };
 
-    const confirmDeleteAccount = () => {
+    const confirmDeleteAccount = async () => {
         setShowDeleteModal(false);
-        // =====================================================
-        // **TROCAR AQUI QUANDO GATEWAY ESTIVER PRONTO**
-        // =====================================================
-        // const response = await fetch('http://localhost:3000/usuarios/me', {
-        //   method: 'DELETE',
-        //   headers: {
-        //     'Authorization': `Bearer ${token}`
-        //   }
-        // });
-        // =====================================================
+        try {
+          const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
 
-        console.log('Conta excluída');
-        logout();
-        navigate('/');
+          const tokenCheck = requireAuthToken(token);
+          if (!tokenCheck.isValid) {
+            showNotification('error', tokenCheck.message!);
+            return;
+          }
+
+          const response = await fetch(`${API_BASE}/usuarios/me`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({ detail: 'Erro' }));
+            showNotification('error', err.detail || 'Erro ao excluir conta');
+            return;
+          }
+
+          showNotification('success', 'Conta excluída com sucesso.');
+          logout();
+          navigate('/');
+        } catch (error) {
+          showNotification('error', 'Erro ao excluir conta. Tente novamente.');
+        }
     };
 
     const cancelDeleteAccount = () => {
