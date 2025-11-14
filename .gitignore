@@ -1,0 +1,4 @@
+agente-agronomico/__pycache__/
+.env
+*.log
+venv/

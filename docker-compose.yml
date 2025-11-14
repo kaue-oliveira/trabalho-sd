@@ -1,0 +1,52 @@
+version: '3.9'
+
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  servico-rag:
+    build: ./servico-rag
+    container_name: servico-rag
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - OLLAMA_EMBED_MODEL=nomic-embed-text
+      - CHROMA_PATH=/data/chroma
+    volumes:
+      - rag_data:/data
+    ports:
+      - "8002:8002"
+
+  agente_agronomico:
+    build: ./agente-agronomico
+    container_name: agente_agronomico
+    depends_on:
+      - ollama
+      - servico-rag
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - OLLAMA_DECISION_MODEL=mistral
+      - RAG_URL=http://servico-rag:8002
+      - GATEWAY_URL=http://api-gateway:8080 # futuro (mock)
+    ports:
+      - "8001:8001"
+
+  servico-ollama:
+    build: ./servico-ollama
+    container_name: servico-ollama
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_API_URL=http://ollama:11434/api/generate
+    ports:
+      - "8004:8004"
+
+volumes:
+  ollama_data:
+  rag_data:
