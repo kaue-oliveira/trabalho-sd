@@ -1,8 +1,7 @@
-from sqlalchemy import Column, Integer, String, DateTime, Date, Numeric, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Date, Numeric, Text, ForeignKey, BigInteger
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.database import Base
-
 class Usuario(Base):
     __tablename__ = "usuarios"
 
@@ -34,3 +33,20 @@ class Analise(Base):
 
     # Relacionamento
     usuario = relationship("Usuario", back_populates="analises")
+  
+
+class ArabicaPrice(Base):
+    __tablename__ = "arabica_prices_90d"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    price_date = Column(Date, nullable=False, unique=True)
+    price = Column(Numeric(12, 4), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class RobustaPrice(Base):
+    __tablename__ = "robusta_prices_90d"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    price_date = Column(Date, nullable=False, unique=True)
+    price = Column(Numeric(12, 4), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

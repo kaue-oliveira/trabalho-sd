@@ -2,18 +2,18 @@
 
 ## 📄 Descrição
 
-Este projeto é um **microsserviço especializado em persistência e acesso a dados** para o sistema de cafeicultura, parte de um sistema distribuído de apoio à decisão. O serviço atua como uma camada de abstração sobre o banco de dados, fornecendo uma API REST para operações CRUD (Create, Read, Update, Delete) sobre os dados de usuários e análises de café.
+Este projeto é um **microsserviço especializado em persistência e acesso a dados** para o sistema de cafeicultura, parte de um sistema distribuído de apoio à decisão. O serviço atua como uma camada de abstração sobre o banco de dados, fornecendo uma API REST para operações CRUD (Create, Read, Update, Delete) sobre os dados de usuários, análises de café e preços históricos.
 
 ## 🚀 Funcionalidades
 
 - 👥 **Gerenciamento de Usuários**: Criação, listagem e consulta de usuários (Produtores e Cooperativas)
 - 📊 **Gerenciamento de Análises**: Operações completas (CRUD) para análises de café
+- 💰 **Gerenciamento de Preços Históricos**: CRUD completo para preços do café Arábica e Robusta
 - 🗃️ **Persistência Estruturada**: Armazenamento em banco de dados PostgreSQL com relacionamentos
 - 🔌 **API REST**: Endpoints RESTful para integração com outros agentes do sistema
 - 🐳 **Containerizado**: Pronto para execução em Docker
 - 📈 **Validação de Dados**: Usando Pydantic para validação de entradas
 - 📖 **Documentação Interativa**: Swagger UI e ReDoc automáticos
-- 🗄️ **Interface Visual**: pgAdmin incluído para gerenciamento do banco
 
 ## 🏗️ Arquitetura
 
@@ -31,11 +31,13 @@ cafe-data-service/
 │   ├── crud/
 │   │   ├── __init__.py
 │   │   ├── usuarios.py      # Operações de CRUD para usuários
-│   │   └── analises.py      # Operações de CRUD para análises
+│   │   ├── analises.py      # Operações de CRUD para análises
+│   │   └── precos.py        # Operações de CRUD para preços históricos
 │   └── routes/
 │       ├── __init__.py
 │       ├── usuarios.py      # Rotas para usuários
-│       └── analises.py      # Rotas para análises
+│       ├── analises.py      # Rotas para análises
+│       └── precos.py        # Rotas para preços históricos
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
@@ -50,7 +52,6 @@ cafe-data-service/
 - **Docker** + **Docker Compose** - Containerização e orquestração
 - **Pydantic** - Validação de dados e serialização
 - **Uvicorn** - Servidor ASGI de alta performance
-- **pgAdmin** - Interface web para gerenciamento do banco
 
 ## 🔧 Como Executar
 
@@ -76,28 +77,23 @@ docker-compose up --build
 ```
 API: http://localhost:8001
 Documentação: http://localhost:8001/docs
-pgAdmin: http://localhost:8080
 ```
 
 ### Verificação do Serviço
 
 ```bash
 # Health check
-curl http://localhost:8001/health
-
-# Página inicial
 curl http://localhost:8001/
+
+# Listar preços do Arábica
+curl http://localhost:8001/precos/arabica/
 ```
 
 ## 📡 Endpoints da API
 
-### GET `/health`
-- **Descrição**: Verifica se o serviço está online
-- **Resposta**: `{"status": "healthy", "service": "Cafe Data Service"}`
-
 ### GET `/`
 - **Descrição**: Página inicial com informações do serviço
-- **Resposta**: `{"message": "Cafe Data Service - API REST", ...}`
+- **Resposta**: `{"message": "Cafe Data Service API"}`
 
 ### 👥 **Usuários**
 
@@ -153,20 +149,76 @@ curl http://localhost:8001/
 }
 ```
 
-#### PUT `/analises/{analise_id}`
-- **Descrição**: Atualiza uma análise existente
-- **Body** (campos opcionais):
+#### DELETE `/analises/{analise_id}`
+- **Descrição**: Remove uma análise
+
+### 💰 **Preços Históricos**
+
+#### **Arábica**
+
+##### GET `/precos/arabica/`
+- **Descrição**: Lista todos os preços do Arábica (ordenados por data decrescente)
+
+##### GET `/precos/arabica/{price_id}`
+- **Descrição**: Busca um preço específico do Arábica por ID
+
+##### GET `/precos/arabica/data/{price_date}`
+- **Descrição**: Busca preço do Arábica por data específica
+
+##### GET `/precos/arabica/ultimo/`
+- **Descrição**: Retorna o último preço registrado do Arábica
+
+##### POST `/precos/arabica/`
+- **Descrição**: Adiciona novo preço do Arábica
+- **Body**:
 ```json
 {
-  "tipo_cafe": "Novo Tipo",
-  "quantidade": 1200.50,
-  "decisao": "AGUARDAR",
-  "explicacao_decisao": "Nova explicação"
+  "price_date": "2024-11-14",
+  "price": 650.50
 }
 ```
 
-#### DELETE `/analises/{analise_id}`
-- **Descrição**: Remove uma análise
+##### DELETE `/precos/arabica/{price_id}`
+- **Descrição**: Remove preço do Arábica por ID
+
+##### DELETE `/precos/arabica/ultimo/`
+- **Descrição**: Remove o último preço registrado do Arábica
+
+##### DELETE `/precos/arabica/antigo/`
+- **Descrição**: Remove o preço mais antigo do Arábica
+
+#### **Robusta**
+
+##### GET `/precos/robusta/`
+- **Descrição**: Lista todos os preços do Robusta (ordenados por data decrescente)
+
+##### GET `/precos/robusta/{price_id}`
+- **Descrição**: Busca um preço específico do Robusta por ID
+
+##### GET `/precos/robusta/data/{price_date}`
+- **Descrição**: Busca preço do Robusta por data específica
+
+##### GET `/precos/robusta/ultimo/`
+- **Descrição**: Retorna o último preço registrado do Robusta
+
+##### POST `/precos/robusta/`
+- **Descrição**: Adiciona novo preço do Robusta
+- **Body**:
+```json
+{
+  "price_date": "2024-11-14",
+  "price": 450.25
+}
+```
+
+##### DELETE `/precos/robusta/{price_id}`
+- **Descrição**: Remove preço do Robusta por ID
+
+##### DELETE `/precos/robusta/ultimo/`
+- **Descrição**: Remove o último preço registrado do Robusta
+
+##### DELETE `/precos/robusta/antigo/`
+- **Descrição**: Remove o preço mais antigo do Robusta
 
 ## 🗃️ Estrutura do Banco de Dados
 
@@ -192,6 +244,18 @@ curl http://localhost:8001/
 - `explicacao_decisao` (Text)
 - `criado_em` (Timestamp)
 
+### Tabela `arabica_prices_90d`
+- `id` (BigSerial, Primary Key)
+- `price_date` (Date, Unique)
+- `price` (Numeric(12,4))
+- `created_at` (Timestamp)
+
+### Tabela `robusta_prices_90d`
+- `id` (BigSerial, Primary Key)
+- `price_date` (Date, Unique)
+- `price` (Numeric(12,4))
+- `created_at` (Timestamp)
+
 ## 🎯 Exemplos de Uso
 
 ### Criar um usuário produtor
@@ -206,27 +270,24 @@ curl -X POST "http://localhost:8001/usuarios/" \
   }'
 ```
 
-### Criar uma análise
+### Adicionar preço do Arábica
 ```bash
-curl -X POST "http://localhost:8001/analises/" \
+curl -X POST "http://localhost:8001/precos/arabica/" \
   -H "Content-Type: application/json" \
   -d '{
-    "usuario_id": 1,
-    "tipo_cafe": "Bourbon",
-    "data_colheita": "2024-05-20",
-    "quantidade": 800.25,
-    "cidade": "Carmo de Minas",
-    "estado": "MG",
-    "estado_cafe": "verde",
-    "data_analise": "2024-06-10",
-    "decisao": "VENDER_PARCIALMENTE",
-    "explicacao_decisao": "Café de alta qualidade, preço pode valorizar"
+    "price_date": "2024-11-14",
+    "price": 650.50
   }'
 ```
 
-### Listar análises de um usuário
+### Deletar último preço do Robusta
 ```bash
-curl -X GET "http://localhost:8001/analises/usuario/1"
+curl -X DELETE "http://localhost:8001/precos/robusta/ultimo/"
+```
+
+### Listar preços do Arábica
+```bash
+curl -X GET "http://localhost:8001/precos/arabica/"
 ```
 
 ## 🖥️ Interfaces Visuais para Teste
@@ -241,27 +302,7 @@ http://localhost:8001/docs
 http://localhost:8001/redoc
 ```
 
-### pgAdmin (Gerenciamento do Banco)
-```
-http://localhost:8080
-```
-- **Email**: `admin@admin.com`
-- **Senha**: `admin`
-
-**Configuração do pgAdmin:**
-1. Adicione um novo servidor
-2. **Name**: `CafeQuality DB`
-3. **Host**: `db`
-4. **Port**: `5432`
-5. **Username**: `postgres`
-6. **Password**: `password`
-
 ## 🔍 Testes com cURL
-
-### Health Check
-```bash
-curl -X GET "http://localhost:8001/health"
-```
 
 ### Listar Usuários
 ```bash
@@ -283,6 +324,16 @@ curl -X POST "http://localhost:8001/analises/" \
     "data_analise": "2024-07-01",
     "decisao": "VENDER",
     "explicacao_decisao": "Preço atual favorável"
+  }'
+```
+
+### Adicionar Preço Histórico
+```bash
+curl -X POST "http://localhost:8001/precos/arabica/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "price_date": "2024-11-14",
+    "price": 652.75
   }'
 ```
 
@@ -310,7 +361,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 Crie um arquivo `.env`:
 ```env
 DB_HOST=localhost
-DB_PORT=5433
+DB_PORT=5435
 DB_NAME=cafequality
 DB_USER=postgres
 DB_PASSWORD=password
@@ -321,36 +372,16 @@ DB_PASSWORD=password
 Este serviço é projetado para integrar-se com um **API Gateway** central que orquestra múltiplos agentes:
 
 - **Agente Climático** - Dados meteorológicos
-- **Agente de Preços** - Cotações do café
+- **Agente de Preços** - Cotações do café em tempo real
 - **Agente Agronômico** - Análise e decisão integrada
-- **Data Service** (este projeto) - Persistência e consulta de dados
-
-## 📈 Monitoramento
-
-O serviço inclui endpoints básicos de saúde:
-- `/health` - Status do serviço
-- `/` - Informações básicas
-
-## 🐛 Solução de Problemas
-
-### Erro: Porta já em uso
-- Altere as portas no `docker-compose.yml` se as portas estiverem ocupadas
-
-### Erro: "Cannot connect to database"
-- Verifique se o container do PostgreSQL está rodando
-- Confirme as credenciais no `.env`
-
-### Erro de importação de módulos
-- Verifique a estrutura de diretórios e arquivos `__init__.py`
-
-### Dependências faltantes
-- Verifique se todas as dependências estão no `requirements.txt`
+- **Data Service** (este projeto) - Persistência e consulta de dados históricos
 
 ## 📊 Dados Iniciais
 
 O sistema inclui dados de exemplo:
 - 2 usuários (1 produtor, 1 cooperativa)
 - 8 análises com diferentes decisões e tipos de café
+- Estrutura para preços históricos do Arábica e Robusta
 - Dados realistas para regiões cafeeiras de MG e ES
 
 ## 📝 Licença
@@ -363,4 +394,4 @@ Este projeto faz parte do trabalho de Sistemas Distribuídos da UFLA.
 
 ---
 
-**💡 OBS**: ---
+**💡 Nota**: Este serviço fornece operações completas de CRUD para usuários, análises e preços históricos, com endpoints especializados para gerenciamento eficiente dos dados de café.
