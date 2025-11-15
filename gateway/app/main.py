@@ -119,49 +119,39 @@ class LoginResponse(BaseModel):
     token_type: str = "bearer"
     user: dict
 
-# ALTERAR ISSO DAQUI DPS 
+
 @app.post("/auth/login", response_model=LoginResponse)
 async def login(login_data: LoginRequest, data_client: httpx.AsyncClient = Depends(get_data_service_client)):
     """
     Autentica usuário via Data Service e gera JWT no Gateway
     """
     try:
-        # Encaminha para o endpoint de login do Data Service
         resp = await data_client.post("/auth/login", json=login_data.dict())
-        
-        if resp.status_code == 200:
-            response_data = resp.json()
-            user_data = response_data["user"]
-            
-            # Gera token JWT no Gateway
-            token_data = {"sub": str(user_data["id"]), "email": user_data["email"]}
-            access_token = create_access_token(token_data)
-            
-            return LoginResponse(
-                access_token=access_token,
-                user=user_data
-            )
-        else:
-            # Repassa erro do Data Service
-            raise HTTPException(
-                status_code=resp.status_code,
-                detail=resp.json().get("detail", "Credenciais inválidas")
-            )
-            
+        resp.raise_for_status()
+        response_data = resp.json()
+        user_data = response_data["user"]
+
+        token_data = {"sub": str(user_data["id"]), "email": user_data["email"]}
+        access_token = create_access_token(token_data)
+
+        return LoginResponse(access_token=access_token, user=user_data)
+
     except httpx.HTTPStatusError as e:
+        detail = e.response.json().get("detail") if e.response.content else e.response.text
         raise HTTPException(
-            status_code=e.response.status_code, 
-            detail=e.response.json().get("detail", "Erro de autenticação")
+            status_code=e.response.status_code,
+            detail=detail or "Erro de autenticação"
         )
-    except Exception as e:
+    except httpx.RequestError as e:
         raise HTTPException(
-            status_code=503, 
+            status_code=503,
             detail=f"Data Service não disponível: {str(e)}"
         )
 
 @app.post("/auth/logout")
 async def logout():
     return {"message": "Logout realizado com sucesso"}
+
 
 @app.get("/auth/me")
 async def get_current_user(payload: dict = Depends(verify_token), data_client: httpx.AsyncClient = Depends(get_data_service_client)):
@@ -177,7 +167,7 @@ async def get_current_user(payload: dict = Depends(verify_token), data_client: h
         if e.response.status_code == 404:
             raise HTTPException(status_code=404, detail="Usuário não encontrado")
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
-    except Exception as e:
+    except httpx.RequestError as e:
         raise HTTPException(status_code=503, detail=f"Data Service não disponível: {str(e)}")
 
 
@@ -225,7 +215,7 @@ async def listar_usuarios(data_client: httpx.AsyncClient = Depends(get_data_serv
         return resp.json()
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
-    except Exception as e:
+    except httpx.RequestError as e:
         raise HTTPException(status_code=503, detail=f"Data Service não disponível: {str(e)}")
     
     
@@ -237,8 +227,9 @@ async def criar_usuario(user_data: dict, data_client: httpx.AsyncClient = Depend
         return resp.json()
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
-    except Exception as e:
+    except httpx.RequestError as e:
         raise HTTPException(status_code=503, detail=f"Data Service não disponível: {str(e)}")
+
 
 @app.put("/usuarios/me")
 async def atualizar_usuario(user_data: dict, token_payload: dict = Depends(verify_token), data_client: httpx.AsyncClient = Depends(get_data_service_client)):
@@ -249,8 +240,9 @@ async def atualizar_usuario(user_data: dict, token_payload: dict = Depends(verif
         return resp.json()
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
-    except Exception as e:
+    except httpx.RequestError as e:
         raise HTTPException(status_code=503, detail=f"Data Service não disponível: {str(e)}")
+
 
 @app.delete("/usuarios/me")
 async def deletar_usuario(token_payload: dict = Depends(verify_token), data_client: httpx.AsyncClient = Depends(get_data_service_client)):
@@ -261,8 +253,9 @@ async def deletar_usuario(token_payload: dict = Depends(verify_token), data_clie
         return resp.json()
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
-    except Exception as e:
+    except httpx.RequestError as e:
         raise HTTPException(status_code=503, detail=f"Data Service não disponível: {str(e)}")
+
 
 # =====================================================
 # **ENDPOINTS DE ANÁLISES**
@@ -276,8 +269,9 @@ async def listar_analises(payload: dict = Depends(verify_token), data_client: ht
         return resp.json()
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
-    except Exception as e:
+    except httpx.RequestError as e:
         raise HTTPException(status_code=503, detail=f"Data Service não disponível: {str(e)}")
+
 
 @app.post("/analises")
 async def criar_analise(analise_data: dict, payload: dict = Depends(verify_token), data_client: httpx.AsyncClient = Depends(get_data_service_client)):
@@ -289,8 +283,9 @@ async def criar_analise(analise_data: dict, payload: dict = Depends(verify_token
         return resp.json()
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
-    except Exception as e:
+    except httpx.RequestError as e:
         raise HTTPException(status_code=503, detail=f"Data Service não disponível: {str(e)}")
+
 
 # =====================================================
 # **ENDPOINTS PROXY PARA CLIMATE AGENT**
@@ -309,8 +304,9 @@ async def get_climate_forecast(
         return response.json()
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
-    except Exception as e:
+    except httpx.RequestError as e:
         raise HTTPException(status_code=503, detail=f"Climate Agent não disponível: {str(e)}")
+
 
 if __name__ == "__main__":
     import uvicorn
