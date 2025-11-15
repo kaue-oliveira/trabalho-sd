@@ -18,11 +18,20 @@ def login(login_data: LoginRequest, db: Session = Depends(get_db)):
             detail="Usuários e/ou senha inválidos"
         )
     
-    if not verificar_senha(login_data.password, usuario.senha):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuários e/ou senha inválidos"
-        )
+    if usuario.senha.startswith("$2b$") or usuario.senha.startswith("$2a$"):
+        # senha com hash bcrypt
+        if not verificar_senha(login_data.password, usuario.senha):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Usuários e/ou senha inválidos"
+            )
+    else:
+        # senha antiga em TEXTO PURO (seed do init.sql)
+        if login_data.password != usuario.senha:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Usuários e/ou senha inválidos")
+
     
     user_data = {
         "id": usuario.id,

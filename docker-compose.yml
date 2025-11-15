@@ -1,0 +1,88 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15
+    container_name: cafe-db
+    environment:
+      POSTGRES_DB: cafequality
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./cafe-data-service/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cafequality"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - agronet
+    restart: unless-stopped
+
+  data-service:
+    build:
+      context: .
+      dockerfile: cafe-data-service/Dockerfile
+    container_name: data-service
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: cafequality
+      DB_USER: postgres
+      DB_PASSWORD: password
+    depends_on:
+      - db
+    ports:
+      - "8001:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - agronet
+    restart: unless-stopped
+
+  cafe-climate-agent:
+    build:
+      context: .
+      dockerfile: cafe-climate-agent/Dockerfile
+    container_name: cafe-climate-agent
+    environment:
+      # exemplo de variáveis do climate agent (mapa)
+      SOME_API_KEY: "${SOME_API_KEY:-}"
+      ANOTHER_VAR: "valor_exemplo"
+    depends_on:
+      - data-service
+    ports:
+      - "8002:8002"
+    networks:
+      - agronet
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    container_name: gateway
+    environment:
+      DATA_SERVICE_URL: "http://data-service:8000"
+      CLIMATE_AGENT_URL: "http://cafe-climate-agent:8002"
+    depends_on:
+      - data-service
+      - cafe-climate-agent
+    ports:
+      - "3000:3000"
+    networks:
+      - agronet
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  agronet:
+    driver: bridge

@@ -10,7 +10,7 @@ Analise = AnaliseResponse
 
 router = APIRouter(prefix="/analises", tags=["analises"])
 
-@router.post("/", response_model=Analise)
+@router.post("", response_model=Analise)
 def criar_analise(analise: AnaliseCreate, db: Session = Depends(get_db)):
     return crud_analises.criar_analise(db=db, analise=analise)
 
@@ -30,7 +30,7 @@ def listar_analises_usuario(
 ):
     return crud_analises.listar_analises_por_usuario(db, usuario_id=usuario_id, skip=skip, limit=limit)
 
-@router.get("/", response_model=List[AnaliseResponse])
+@router.get("", response_model=List[AnaliseResponse])
 def listar_analises(
     skip: int = 0, 
     limit: int = 100, 
