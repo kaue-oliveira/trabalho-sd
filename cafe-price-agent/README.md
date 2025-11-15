@@ -15,23 +15,6 @@ Microserviço FastAPI responsável por coletar, armazenar e processar preços de
 
 ---
 
-## 📁 Estrutura de Pastas
-
-cafe-price-agent/
-│── app/
-│ ├── main.py
-│ ├── routes/
-│ │ └── price.py
-│ ├── services/
-│ │ ├── scraper.py
-│ │ └── dataservice.py
-│ └── utils/
-│ └── calc.py
-├── requirements.txt
-└── Dockerfile
-
----
-
 ## 🚀 Como Executar
 
 ### 🔧 Pré-requisitos
