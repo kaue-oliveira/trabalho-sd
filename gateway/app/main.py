@@ -171,37 +171,28 @@ async def get_current_user(payload: dict = Depends(verify_token), data_client: h
         raise HTTPException(status_code=503, detail=f"Data Service não disponível: {str(e)}")
 
 
-# # VOU VER COMO FAÇO ISSO DAQUI DPS
-# @app.post("/auth/forgot-password")
-# async def forgot_password(payload: dict):
-#     """
-#     Simula envio de email de redefinição de senha (mock).
-#     """
-#     email = payload.get("email")
-#     if not email:
-#         raise HTTPException(status_code=400, detail="Email é obrigatório")
+@app.post("/auth/forgot-password")
+async def forgot_password(payload: dict, data_client: httpx.AsyncClient = Depends(get_data_service_client)):
+    try:
+        resp = await data_client.post("/auth/forgot-password", json=payload)
+        resp.raise_for_status()
+        return resp.json()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail=f"Data Service não disponível: {str(e)}")
 
-#     usuario = next((u for u in MOCK_USUARIOS if u["email"] == email), None)
-#     if not usuario:
-#         return {"message": "Se o email existir, instruções foram enviadas."}
 
-#     # Simular envio (em produção: criar token e enviar email)
-#     return {"message": "Instruções de redefinição enviadas para o email informado."}
-
-# # VOU VER COMO FAÇO ISSO DAQUI DPS
-# @app.post("/auth/change-password")
-# async def change_password(payload: dict, token_payload: dict = Depends(verify_token)):
-
-#     new_password = payload.get("new_password")
-#     if not new_password:
-#         raise HTTPException(status_code=400, detail="Nova senha é obrigatória")
-
-#     user_id = int(token_payload.get("sub"))
-#     if user_id not in [u["id"] for u in MOCK_USUARIOS]:
-#         raise HTTPException(status_code=404, detail="Usuário não encontrado")
-
-#     MOCK_PASSWORDS[user_id] = new_password
-#     return {"message": "Senha atualizada com sucesso."}
+@app.post("/auth/reset-password")
+async def change_password(payload: dict, data_client: httpx.AsyncClient = Depends(get_data_service_client)):
+    try:
+        resp = await data_client.post("/auth/reset-password", json=payload)
+        resp.raise_for_status()
+        return resp.json()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail=f"Data Service não disponível: {str(e)}")
 
 
 # =====================================================
@@ -291,12 +282,7 @@ async def criar_analise(analise_data: dict, payload: dict = Depends(verify_token
 # **ENDPOINTS PROXY PARA CLIMATE AGENT**
 # =====================================================
 @app.get("/climate/forecast")
-async def get_climate_forecast(
-    cidade: str,
-    estado: str,
-    payload: dict = Depends(verify_token),
-    client: httpx.AsyncClient = Depends(get_climate_agent_client)
-):
+async def get_climate_forecast(cidade: str, estado: str, payload: dict = Depends(verify_token), client: httpx.AsyncClient = Depends(get_climate_agent_client)):
     try:
         location = f"{cidade},{estado}"
         response = await client.get(f"/climate/forecast/{location}")
