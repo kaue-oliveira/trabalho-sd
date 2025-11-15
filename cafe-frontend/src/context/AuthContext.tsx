@@ -97,8 +97,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       if (token) {
         await fetch(`${API_BASE}/auth/logout`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` }
+          method: 'POST'
         });
       }
     } catch (error) {
