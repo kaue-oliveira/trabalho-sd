@@ -9,7 +9,7 @@ Usuario = UsuarioResponse
 
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 
-@router.post("/", response_model=Usuario)
+@router.post("", response_model=Usuario)
 def criar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
     db_user = crud_usuarios.obter_usuario_por_email(db, email=usuario.email)
     if db_user:
@@ -23,7 +23,7 @@ def ler_usuario(usuario_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     return db_user
 
-@router.get("/", response_model=list[Usuario])
+@router.get("", response_model=list[Usuario])
 def listar_usuarios(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     usuarios = crud_usuarios.listar_usuarios(db, skip=skip, limit=limit)
     return usuarios
