@@ -1,0 +1,13 @@
+price_agent/
+│── app/
+│   ├── main.py
+│   ├── routes/
+│   │     └── price.py
+│   ├── services/
+│   │     ├── scraper.py   (já pronto)
+│   │     └── dataservice.py
+│   └── utils/
+│         └── calc.py
+│
+├── requirements.txt
+└── Dockerfile
