@@ -1,61 +1,88 @@
-version: '3.9'
+version: "3.8"
 
 services:
-  ollama:
-    image: ollama/ollama
-    container_name: ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-      - /dev/dri:/dev/dri  # Intel GPU device
-    devices:
-      - /dev/dri:/dev/dri  # Intel GPU access
+  db:
+    image: postgres:15
+    container_name: cafe-db
     environment:
-      - OLLAMA_NUM_PARALLEL=1
-      - OLLAMA_MAX_LOADED_MODELS=1
-      - OLLAMA_INTEL_GPU=1  # Habilita Intel GPU
-      - OLLAMA_FLASH_ATTENTION=1
-      - OLLAMA_CONTEXT_LENGTH=2048
-    group_add:
-      - video  # Acesso ao grupo video para GPU
-
-  gateway:
-    build: ./gateway
-    container_name: api-gateway
+      POSTGRES_DB: cafequality
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./cafe-data-service/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
-      - "3000:3000"
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cafequality"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - agronet
     restart: unless-stopped
 
-  rag_service:
-    build: ./rag_service
-    container_name: rag_local_service
+  data-service:
+    build:
+      context: .
+      dockerfile: cafe-data-service/Dockerfile
+    container_name: data-service
     environment:
-      - OLLAMA_URL=http://ollama:11434
-      - OLLAMA_EMBED_MODEL=nomic-embed-text
-      - CHROMA_PATH=/data/chroma
-    volumes:
-      - rag_data:/data
-      - ./rag_service/pdfs:/app/pdfs
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: cafequality
+      DB_USER: postgres
+      DB_PASSWORD: password
     depends_on:
-      - ollama
+      - db
+    ports:
+      - "8001:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - agronet
+    restart: unless-stopped
+
+  cafe-climate-agent:
+    build:
+      context: .
+      dockerfile: cafe-climate-agent/Dockerfile
+    container_name: cafe-climate-agent
+    environment:
+      # exemplo de variáveis do climate agent (mapa)
+      SOME_API_KEY: "${SOME_API_KEY:-}"
+      ANOTHER_VAR: "valor_exemplo"
+    depends_on:
+      - data-service
     ports:
       - "8002:8002"
+    networks:
+      - agronet
     restart: unless-stopped
 
-  agente_agronomico:
-    build: ./agente-agronomico
-    container_name: agente_agronomico
-    depends_on:
-      - gateway
-      - rag_service
-      - ollama
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    container_name: gateway
     environment:
-      - GATEWAY_URL=http://gateway:3000
+      DATA_SERVICE_URL: "http://data-service:8000"
+      CLIMATE_AGENT_URL: "http://cafe-climate-agent:8002"
+    depends_on:
+      - data-service
+      - cafe-climate-agent
     ports:
-      - "8001:8001"
-
+      - "3000:3000"
+    networks:
+      - agronet
+    restart: unless-stopped
 
 volumes:
-  ollama_data:
-  rag_data:
+  postgres_data:
+
+networks:
+  agronet:
+    driver: bridge

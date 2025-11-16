@@ -3,6 +3,16 @@ from datetime import date, datetime
 from typing import Optional, List
 from decimal import Decimal
 
+# Schemas para autenticação
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: dict
+
 # Schemas para Usuario
 class UsuarioBase(BaseModel):
     nome: str
