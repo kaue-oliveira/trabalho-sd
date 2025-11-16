@@ -56,8 +56,9 @@ services:
     container_name: agro-agent
     environment:
       GATEWAY_URL: "http://gateway:3000"
-    ports:
-      - "8101:8000"
+    # Porta removida - acesso apenas via gateway
+    # ports:
+    #   - "8101:8000"
     networks:
       - agronet
     restart: unless-stopped
@@ -97,8 +98,20 @@ services:
       - agronet
     restart: unless-stopped
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - agronet
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  ollama_data:
 
 networks:
   agronet:

@@ -16,7 +16,7 @@ agente-agronomico/
 
 ### Iniciar o serviço
 ```bash
-sudo docker-compose up -d agente_agronomico
+sudo docker-compose up -d agro-agent
 ```
 
 ### Testes Básicos
@@ -35,14 +35,31 @@ time curl -X POST http://localhost:8101/recommend \
     "data_colheita": "2025-07-15",
     "quantidade": 150.5,
     "cidade": "Patrocínio",
-    "estado": "Minas Gerais",
-    "estado_cafe": "cereja"
+    "estado": "MG",
+    "estado_cafe": "verde"
   }' 
+```
+
+2.1 **Pedir recomendação via gateway de venda logado**
+```bash
+curl -X POST http://localhost:3000/auth/login -H "Content-Type: application/json" -d '{"email":"ana.cafeicultora@email.com","password":"CafeAna123"}'
+export TOKEN=""
+curl -X POST http://localhost:3000/agro/recommend \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tipo_cafe": "arabica",
+    "data_colheita": "2025-07-15",
+    "quantidade": 150.5,
+    "cidade": "Patrocinio",
+    "estado": "MG",
+    "estado_cafe": "verde"
+  }'
 ```
 
 3. **Ver logs dos PDFs consultados**
 ```bash
-sudo docker logs agente_agronomico --tail 5
+sudo docker logs agro-agent --tail 20
 ```
 
 ## Como Funciona
@@ -56,8 +73,8 @@ sudo docker logs agente_agronomico --tail 5
 ## Resposta Esperada
 ```json
 {
-  "decision": "aguardar",
-  "explanation": "Com base no clima e preços..."
+  "decisao": "aguardar",
+  "explicacao_decisao": "Com base no clima e preços..."
 }
 ```
 
