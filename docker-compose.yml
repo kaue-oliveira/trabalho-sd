@@ -1,0 +1,63 @@
+version: '3.9'
+
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_NUM_PARALLEL=4
+      - OLLAMA_MAX_LOADED_MODELS=2
+
+  gateway:
+    build: ./gateway
+    container_name: api-gateway
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  rag_service:
+    build: ./rag_service
+    container_name: rag_local_service
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - OLLAMA_EMBED_MODEL=nomic-embed-text
+      - CHROMA_PATH=/data/chroma
+    volumes:
+      - rag_data:/data
+      - ./pdfs:/app/pdfs
+    depends_on:
+      - ollama
+    ports:
+      - "8002:8002"
+    restart: unless-stopped
+
+  agente_agronomico:
+    build: ./agente-agronomico
+    container_name: agente_agronomico
+    depends_on:
+      - gateway
+      - rag_service
+      - ollama_service
+    environment:
+      - GATEWAY_URL=http://gateway:3000
+    ports:
+      - "8001:8001"
+
+  ollama_service:
+    build: ./ollama_service
+    container_name: ollama_service
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_API_URL=http://ollama:11434/api/generate
+      - MODEL=phi3:mini
+    ports:
+      - "8004:8004"
+
+volumes:
+  ollama_data:
+  rag_data:

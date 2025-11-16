@@ -6,12 +6,8 @@ ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 
 WORKDIR /app
-
-COPY requirements.txt .
+COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
-
-COPY app/ ./app/
-
-EXPOSE 3000
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "3000"]
+COPY main.py utils.py models.py /app/
+EXPOSE 8001
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]

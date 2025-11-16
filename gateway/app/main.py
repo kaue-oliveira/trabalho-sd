@@ -1,7 +1,9 @@
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import httpx
+import time
 from jose import jwt
 from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel
@@ -16,6 +18,14 @@ app = FastAPI(
     description="API Gateway para o sistema AgroAnalytics",
     version="1.0.0"
 )
+
+# Configurar resposta JSON com UTF-8
+@app.middleware("http")
+async def add_charset_to_content_type(request: Request, call_next):
+    response = await call_next(request)
+    if "application/json" in response.headers.get("content-type", ""):
+        response.headers["content-type"] = "application/json; charset=utf-8"
+    return response
 
 # CORS para o React
 app.add_middleware(
@@ -318,6 +328,119 @@ async def criar_analise(
     return nova_analise
 
 # =====================================================
+# **ENDPOINTS MOCKADOS PARA AGENTE AGRÔNOMO**
+# =====================================================
+@app.get("/climate")
+async def get_climate_data(
+    localidade: str = None,
+    data_colheita: str = None
+):
+    """
+    Endpoint mockado para dados climáticos com estrutura real
+    """
+    # Extrair cidade e estado da localidade
+    location_parts = (localidade or "Minas Gerais, Brasil").split(",")
+    cidade = location_parts[0].strip() if len(location_parts) > 0 else "Desconhecida"
+    estado = location_parts[1].strip() if len(location_parts) > 1 else "Brasil"
+    
+    # Gerar previsão para os próximos 7 dias
+    daily_forecast = []
+    base_date = datetime.now(timezone.utc).date()
+    
+    for i in range(7):
+        forecast_date = base_date + timedelta(days=i)
+        daily_forecast.append({
+            "date": forecast_date.isoformat(),
+            "temperature_2m_max": 28.5 - (i * 0.5),  # Simular variação
+            "temperature_2m_min": 18.2 + (i * 0.3),
+            "precipitation_sum": 5.0 if i % 2 == 0 else 0.0,  # Chuva em dias alternados
+            "precipitation_hours": 2.0 if i % 2 == 0 else 0.0,
+            "windspeed_10m_max": 15.2 + (i * 0.8),
+            "winddirection_10m_dominant": 120,
+            "weathercode": 61 if i % 2 == 0 else 0  # 61=chuva leve, 0=céu limpo
+        })
+    
+    return {
+        "location": f"{cidade}-{estado}",
+        "latitude": -23.511,
+        "longitude": -46.876,
+        "timezone": "America/Sao_Paulo",
+        "elevation": 719.0,
+        "daily_forecast": daily_forecast,
+        "generated_time": datetime.now(timezone.utc).isoformat()
+    }
+
+@app.get("/price")
+async def get_price_data(
+    tipo_grao: str = None,
+    localidade: str = None
+):
+    """
+    Endpoint mockado para dados históricos de preço do café
+    Média de 5 anos, 1 ano, 3 meses, 1 mês e última semana (diário)
+    """
+    tipo = (tipo_grao or "arabica").lower()
+    
+    # Preços base por tipo
+    precos_base = {
+        "arabica": 1250.50,
+        "robusta": 980.75,
+        "conilon": 950.00
+    }
+    
+    preco_base = precos_base.get(tipo, 1100.00)
+    
+    # Gerar dados históricos com variação
+    def gerar_historico_diario(dias, preco_inicial):
+        historico = []
+        preco_atual = preco_inicial
+        base_date = datetime.now(timezone.utc).date()
+        
+        for i in range(dias, 0, -1):
+            data = base_date - timedelta(days=i)
+            # Adicionar variação aleatória simulada
+            variacao = (i % 10 - 5) * 2  # Variação de -10 a +10
+            preco_atual = preco_inicial + variacao
+            historico.append({
+                "data": data.isoformat(),
+                "preco_saca_60kg": round(preco_atual, 2)
+            })
+        
+        return historico
+    
+    return {
+        "tipo_grao": tipo,
+        "moeda": "BRL",
+        "preco_atual": preco_base,
+        "data_consulta": datetime.now(timezone.utc).isoformat(),
+        "historico": {
+            "media_5_anos": {
+                "preco_medio": round(preco_base * 0.85, 2),
+                "variacao_percentual": -15.0,
+                "periodo": "2020-2025"
+            },
+            "media_1_ano": {
+                "preco_medio": round(preco_base * 0.92, 2),
+                "variacao_percentual": -8.0,
+                "periodo": "2024-2025"
+            },
+            "media_3_meses": {
+                "preco_medio": round(preco_base * 0.96, 2),
+                "variacao_percentual": -4.0,
+                "periodo": "ago/2024-nov/2024"
+            },
+            "media_1_mes": {
+                "preco_medio": round(preco_base * 0.98, 2),
+                "variacao_percentual": -2.0,
+                "periodo": "out/2024"
+            },
+            "ultima_semana_diario": gerar_historico_diario(7, preco_base)
+        },
+        "tendencia": "alta",
+        "volatilidade": "moderada"
+    }
+
+# =====================================================
 # **ENDPOINTS PROXY PARA CLIMATE AGENT**
 # =====================================================
 @app.get("/climate/forecast")
@@ -336,6 +459,59 @@ async def get_climate_forecast(
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Climate Agent não disponível: {str(e)}")
+
+# =====================================================
+# **ENDPOINTS PROXY PARA RAG SERVICE**
+# =====================================================
+@app.post("/rag/search")
+async def rag_search_proxy(request: dict):
+    """
+    Proxy para o RAG service - busca semântica em documentos
+    Sem autenticação pois é usado internamente pelos agentes
+    """
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                "http://rag_service:8002/rag/search",
+                json=request
+            )
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"RAG Service não disponível: {str(e)}")
+
+# =====================================================
+# **ENDPOINTS PROXY PARA OLLAMA SERVICE**
+# =====================================================
+@app.post("/ollama/generate")
+async def proxy_ollama_generate(request: Request):
+    """
+    Proxy para o serviço Ollama
+    Timeout de 120s é suficiente para phi3:mini (responde em 10-30s)
+    """
+    body = await request.json()
+    try:
+        start = time.perf_counter()
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            response = await client.post(
+                "http://ollama_service:8004/generate",
+                json=body
+            )
+            duration = time.perf_counter() - start
+            resp_json = response.json()
+            # adicionar informações de timing no corpo para diagnóstico
+            if isinstance(resp_json, dict):
+                resp_json.setdefault("timings", {})
+                resp_json["timings"]["gateway_proxy_seconds"] = round(duration, 3)
+                if "ollama_time_seconds" in resp_json:
+                    resp_json["timings"]["ollama_time_seconds"] = resp_json.get("ollama_time_seconds")
+            return JSONResponse(content=resp_json, headers={"X-Proxy-Duration": f"{duration:.3f}"})
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Ollama service timeout")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
