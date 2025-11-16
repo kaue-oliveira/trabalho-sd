@@ -6,8 +6,7 @@ import styles from './HistoricAnalyses.module.css';
 
 const decisionLabel = (decisao: string) => {
   if (decisao === 'VENDER') return 'Vender Agora';
-  if (decisao === 'AGUARDAR') return 'Aguardar';
-  return 'Vender Parcialmente';
+  return 'Aguardar';
 };
 
 const getDecisionClass = (decision: string) => {
@@ -16,8 +15,6 @@ const getDecisionClass = (decision: string) => {
       return `${styles.decisionBadge} ${styles.decisionSell}`;
     case 'AGUARDAR':
       return `${styles.decisionBadge} ${styles.decisionHold}`;
-    case 'VENDER_PARCIALMENTE':
-      return `${styles.decisionBadge} ${styles.decisionPartial}`;
     default:
       return styles.decisionBadge;
   }

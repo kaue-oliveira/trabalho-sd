@@ -4,7 +4,7 @@ import Sidebar from '../../Components/Sidebar/Sidebar';
 import Modal from '../../Components/Modal/Modal';
 import { useNotification } from '../../hooks/useNotification';
 import { analysisValidations, requireAuthToken } from '../../utils/Validations';
-import { useAuth } from '../../context/AuthContext'; // adicionado
+import { useAuth } from '../../context/AuthContext';
 
 const NewAnalysis: React.FC = () => {
   const { notification, showNotification, closeNotification } = useNotification();
@@ -22,8 +22,6 @@ const NewAnalysis: React.FC = () => {
   const [analysisResult, setAnalysisResult] = useState<{
     decisao: string;
     explicacao_decisao: string;
-    preco_mercado?: string;
-    previsao_clima?: string;
   } | null>(null);
 
   const handleInputChange = (field: string, value: string) => {
@@ -49,7 +47,6 @@ const NewAnalysis: React.FC = () => {
       return;
     }
 
-    console.log('Enviando dados para análise:', formData);
 
     try {
       const tokenCheck = requireAuthToken(token);
@@ -57,21 +54,39 @@ const NewAnalysis: React.FC = () => {
         showNotification('error', tokenCheck.message!);
         return;
       }
-      // =====================================================
-      // **TROCAR AQUI QUANDO GATEWAY/IA ESTIVER PRONTO**
-      // =====================================================
-      // Simulando resposta da IA
-      const mockAnalysisResult = {
-        decisao: 'VENDER',
-        explicacao_decisao: 'Preço do Arábica em alta de 8% no mercado futuro. Previsão de chuva intensa na região pode comprometer qualidade do grão armazenado. Relatórios indicam baixa oferta nos próximos 30 dias."',
-        preco_mercado: 'R$ 4,50/kg (+8,1%)',
-        previsao_clima: 'Desfavorável'
+
+      const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
+
+      const analysisPayload = {
+        tipo_cafe: formData.tipo_cafe,
+        data_colheita: formData.data_colheita,
+        quantidade: parseFloat(formData.quantidade),
+        cidade: formData.cidade,
+        estado: formData.estado,
+        estado_cafe: formData.estado_cafe
       };
 
-      setAnalysisResult(mockAnalysisResult);
-      showNotification('success', 'Análise concluída com sucesso!');
+      const response = await fetch(`${API_BASE}/agro/recommend`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(analysisPayload)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Erro na análise agronômica');
+      }
+
+      const analysisResult = await response.json();
+
+      setAnalysisResult(analysisResult);
+      showNotification('success', 'Análise agronômica concluída com sucesso!');
 
     } catch (error) {
+      console.error('Erro na análise agronômica:', error);
       showNotification('error', 'Erro ao realizar análise. Tente novamente.');
     }
   };
@@ -95,7 +110,7 @@ const NewAnalysis: React.FC = () => {
         showNotification('error', tokenCheck.message!);
         return;
       }
-      // Enviar para o gateway
+
       const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
       const response = await fetch(`${API_BASE}/analises`, {
         method: 'POST',
@@ -142,8 +157,6 @@ const NewAnalysis: React.FC = () => {
     switch (decisao) {
       case 'VENDER':
         return styles.sellBadge;
-      case 'VENDER_PARCIALMENTE':
-        return styles.partialSellBadge;
       case 'AGUARDAR':
         return styles.waitBadge;
       default:
@@ -155,8 +168,6 @@ const NewAnalysis: React.FC = () => {
     switch (decisao) {
       case 'VENDER':
         return 'VENDER';
-      case 'VENDER_PARCIALMENTE':
-        return 'VENDER PARCIALMENTE';
       case 'AGUARDAR':
         return 'AGUARDAR';
       default:
@@ -316,25 +327,6 @@ const NewAnalysis: React.FC = () => {
                           {analysisResult.explicacao_decisao}
                         </p>
                       </div>
-
-                      {(analysisResult.preco_mercado || analysisResult.previsao_clima) && (
-                        <div className={styles.statsGrid}>
-                          {analysisResult.preco_mercado && (
-                            <div className={styles.statCard}>
-                              <p className={styles.statLabel}>Preço de Mercado</p>
-                              <p className={styles.statValue}>
-                                {analysisResult.preco_mercado}
-                              </p>
-                            </div>
-                          )}
-                          {analysisResult.previsao_clima && (
-                            <div className={styles.statCard}>
-                              <p className={styles.statLabel}>Previsão do Clima</p>
-                              <p className={styles.statValue}>{analysisResult.previsao_clima}</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
 
                       <div className={styles.saveSection}>
                         <button

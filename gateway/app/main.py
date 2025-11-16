@@ -10,7 +10,8 @@ from pydantic import BaseModel
 
 from .config import (
     GATEWAY_HOST, GATEWAY_PORT, CLIMATE_AGENT_URL, DATA_SERVICE_URL,
-    SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+    SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, RAG_SERVICE_URL,
+    AGRO_AGENT_URL, OLLAMA_URL
 )
 
 app = FastAPI(
@@ -74,6 +75,17 @@ async def get_data_service_client():
     async with httpx.AsyncClient(base_url=DATA_SERVICE_URL, timeout=30.0) as client:
         yield client
 
+async def get_agro_agent_client():
+    async with httpx.AsyncClient(base_url=AGRO_AGENT_URL, timeout=30.0) as client:
+        yield client
+
+async def get_rag_service_client():
+    async with httpx.AsyncClient(base_url=RAG_SERVICE_URL, timeout=None) as client:
+        yield client
+
+async def get_ollama_client():
+    async with httpx.AsyncClient(base_url=OLLAMA_URL, timeout=None) as client:
+        yield client
 
 # =====================================================
 # **ENDPOINTS DE HEALTH CHECK**
@@ -94,7 +106,10 @@ async def health_check():
 @app.get("/health/full")
 async def full_health_check(
     client: httpx.AsyncClient = Depends(get_climate_agent_client),
-    data_client: httpx.AsyncClient = Depends(get_data_service_client)
+    data_client: httpx.AsyncClient = Depends(get_data_service_client),
+    agro_client: httpx.AsyncClient = Depends(get_agro_agent_client),
+    rag_client: httpx.AsyncClient = Depends(get_rag_service_client),
+    ollama_client: httpx.AsyncClient = Depends(get_ollama_client)
 ):
     """Health check completo incluindo serviços"""
     try:
@@ -109,10 +124,31 @@ async def full_health_check(
     except Exception:
         data_status = "unreachable"
 
+    try:
+        agro_response = await agro_client.get("/health")
+        agro_status = "healthy" if agro_response.status_code == 200 else "unhealthy"
+    except Exception:
+        agro_status = "unreachable"
+
+    try:
+        rag_response = await rag_client.get("/health")
+        rag_status = "healthy" if rag_response.status_code == 200 else "unhealthy"
+    except Exception:
+        rag_status = "unreachable"
+
+    try:
+        ollama_response = await ollama_client.get("/api/tags")
+        ollama_status = "healthy" if ollama_response.status_code == 200 else "unhealthy"
+    except Exception:
+        ollama_status = "unreachable"
+
     return {
         "gateway": "healthy",
-        "climate_agent": climate_status,
         "data_service": data_status,
+        "climate_agent": climate_status,
+        "agro_agent": agro_status,
+        "rag_service": rag_status,
+        "ollama": ollama_status,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
@@ -304,72 +340,96 @@ async def get_climate_forecast(cidade: str, estado: str, payload: dict = Depends
         raise HTTPException(status_code=503, detail=f"Climate Agent não disponível: {str(e)}")
 
 # =====================================================
+# **ENDPOINTS PROXY PARA AGRO AGENT**
+# =====================================================
+class AgroAnalysisRequest(BaseModel):
+    tipo_cafe: str
+    data_colheita: str
+    quantidade: float
+    cidade: str
+    estado: str
+    estado_cafe: str
+
+class AgroAnalysisResponse(BaseModel):
+    decisao: str
+    explicacao_decisao: str
+
+app.post("/agro/recommend", response_model=AgroAnalysisResponse)
+async def analyze_coffee(analysis_data: AgroAnalysisRequest, payload: dict = Depends(verify_token), agro_client: httpx.AsyncClient = Depends(get_agro_agent_client)):
+    try:
+        response = await agro_client.post("recommend", json=analysis_data.dict())
+        response.raise_for_status()
+        return response.json()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail=f"Agro Agent não disponível: {str(e)}")
+    
+
+# =====================================================
 # **ENDPOINTS PROXY PARA RAG SERVICE**
 # =====================================================
 @app.post("/rag/search")
-async def rag_search_proxy(request: dict):
+async def rag_search_proxy(request: dict, rag_client: httpx.AsyncClient = Depends(get_rag_service_client)):
     """
     Proxy para o RAG service - busca semântica em documentos
     Sem autenticação pois é usado internamente pelos agentes
     """
     try:
-        async with httpx.AsyncClient(timeout=None) as client:
-            response = await client.post(
-                "http://rag_local_service:8002/rag/search",
-                json=request
-            )
-            response.raise_for_status()
-            return response.json()
+        response = await rag_client.post("/rag/search", json=request)
+        response.raise_for_status()
+        return response.json()
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
-    except Exception as e:
+    except httpx.RequestError as e:
         raise HTTPException(status_code=503, detail=f"RAG Service não disponível: {str(e)}")
+
 
 # =====================================================
 # **ENDPOINTS PROXY PARA OLLAMA**
 # =====================================================
 @app.post("/ollama/generate")
-async def proxy_ollama_generate(request: Request):
-    """
-    Proxy para Ollama direto - sem service intermediário
-    Arquitetura distribuída mantida via gateway
-    """
+async def proxy_ollama_generate(request: Request, ollama_client: httpx.AsyncClient = Depends(get_ollama_client)):
     body = await request.json()
     try:
         start = time.perf_counter()
-        async with httpx.AsyncClient(timeout=None) as client:
-            response = await client.post(
-                "http://ollama:11434/api/generate",
-                json=body
-            )
-            duration = time.perf_counter() - start
-            resp_json = response.json()
-            # adicionar informações de timing no corpo para diagnóstico
-            if isinstance(resp_json, dict):
-                resp_json.setdefault("timings", {})
-                resp_json["timings"]["gateway_proxy_seconds"] = round(duration, 3)
-            return JSONResponse(content=resp_json, headers={"X-Proxy-Duration": f"{duration:.3f}"})
+        response = await ollama_client.post("/api/generate", json=body)
+        response.raise_for_status()
+
+        duration = time.perf_counter() - start
+
+        resp_json = response.json()
+        if isinstance(resp_json, dict):
+            resp_json.setdefault("timings", {})
+            resp_json["timings"]["gateway_proxy_seconds"] = round(duration, 3)
+
+        return JSONResponse(content=resp_json, headers={"X-Proxy-Duration": f"{duration:.3f}"})
+
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail=f"Ollama não disponível: {str(e)}")
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="Ollama timeout")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+
 
 @app.post("/ollama/api/embeddings")
-async def proxy_ollama_embeddings(request: Request):
-
+async def proxy_ollama_embeddings(request: Request, ollama_client: httpx.AsyncClient = Depends(get_ollama_client)):
     body = await request.json()
+
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                "http://ollama:11434/api/embeddings",
-                json=body
-            )
-            resp_json = response.json()
-            return JSONResponse(content=resp_json)
+        response = await ollama_client.post("/api/embeddings", json=body)
+        response.raise_for_status()
+        return JSONResponse(content=response.json())
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail=f"Ollama não disponível: {str(e)}")
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="Ollama embeddings timeout")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
+
 
 if __name__ == "__main__":
     import uvicorn
