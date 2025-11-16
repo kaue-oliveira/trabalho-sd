@@ -1,94 +1,86 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks
-from app.services.scraper import scrape_price
-from app.services.dataservice import salvar_preco, buscar_historico
-from app.utils.calc import gerar_medias_3em3
-import json
+from fastapi import APIRouter, HTTPException
+import os
+from app.services.scraper import baixar_cepea, ler_xls_para_csv
+from app.services.processor import processar_dados
+from app.utils.calc import calcular_medias_moveis
 
-router = APIRouter(prefix="/price", tags=["Price Agent"])
+# Cria roteador FastAPI para agrupar endpoints relacionados a preços
+router = APIRouter()
 
-@router.post("/update/{tipo_cafe}")
-async def update_price_and_stats(tipo_cafe: str, background_tasks: BackgroundTasks):
+@router.get("/preco/{tipo_cafe}")
+async def obter_preco_cafe(tipo_cafe: str):
     """
-    1) faz scraping para pegar o preço mais atual;
-    2) salva o preço no DataService (via gateway);
-    3) busca 90 dias de histórico do DataService;
-    4) calcula as 30 médias (3 em 3 dias);
-    5) retorna o JSON no formato pedido.
-    """
-    print(f" INICIANDO REQUISIÇÃO PARA: {tipo_cafe}")
+    Endpoint REST para obter preços atualizados e médias móveis do café.
     
-    tipo = tipo_cafe.lower()
-    if tipo not in ("arabica", "robusta"):
-        raise HTTPException(400, "Tipo deve ser 'arabica' ou 'robusta'")
-
-    # 1) Scraping
-    print("1. Fazendo scraping...")
-    preco_info = scrape_price(tipo)
-    if not preco_info:
-        raise HTTPException(404, "Preço não encontrado via scraping")
-    print(f"Scraping OK: {preco_info}")
-
-    # 2) Salvar no DataService
-    print("2. Salvando preço no DataService...")
-    try:
-        await salvar_preco(tipo, preco_info)
-        print("Preço salvo com sucesso")
-    except HTTPException as e:
-        print(f"Erro ao salvar preço: {e.detail}")
-        # Se for erro de duplicata, continuamos (é esperado)
-        if "Já existe um preço registrado para esta data" not in str(e.detail):
-            raise
-
-    # 3) Buscar histórico
-    print("3. Buscando histórico...")
-    try:
-        historico = await buscar_historico(tipo)
-        print(f" Histórico obtido: {len(historico)} registros")
-    except HTTPException as e:
-        print(f" Erro ao buscar histórico: {e.detail}")
-        raise HTTPException(e.status_code, f"Erro ao buscar histórico: {e.detail}")
-
-    # 4) Processar histórico
-    print(" 4. Processando histórico...")
-    historico_norm = []
-    for item in historico:
-        if isinstance(item, dict):
-            d = item.get("data") or item.get("price_date")
-            p = item.get("preco") or item.get("price")
-        else:
-            continue
+    Args:
+        tipo_cafe (str): Tipo de café ('arabica' ou 'robusta')
+        
+    Returns:
+        dict: Dicionário contendo:
+            - tipo_cafe: Tipo consultado
+            - data_mais_recente: Data do último preço disponível
+            - preco_atual: Preço mais recente
+            - medias_moveis_3_dias: Lista de médias móveis calculadas
             
-        if d and p is not None:
-            historico_norm.append({"data": d, "preco": float(p)})
+    Raises:
+        HTTPException: 400 para tipo inválido, 404 para dados não encontrados,
+                      500 para erros internos
+    """
+    # Validação do parâmetro de entrada
+    if tipo_cafe not in ["arabica", "robusta"]:
+        raise HTTPException(status_code=400, detail="Tipo de café deve ser 'arabica' ou 'robusta'")
     
-    # Ordenar por data decrescente
-    historico_norm.sort(key=lambda x: x["data"], reverse=True)
-    print(f" Histórico normalizado: {len(historico_norm)} registros")
-
-    # 5) Calcular médias
-    print(" 5. Calculando médias...")
-    medias_3em3 = gerar_medias_3em3(historico_norm)
-    print(f"   Médias calculadas: {len(medias_3em3)} valores")
-
-    # 6) Montar resposta
-    print(" 6. Montando resposta final...")
-    resposta = {
-        "tipo": tipo,
-        "data": preco_info["data"],
-        "preco": preco_info["preco"],
-        "medias_3em3dias": medias_3em3
-    }
-
-    # PRINT DO JSON NO TERMINAL 
-    print("\n" + "="*60)
-    print("🎯 JSON RETORNADO PELO AGENTE:")
-    print("="*60)
-    print(json.dumps(resposta, indent=2, ensure_ascii=False))
-    print("="*60)
-    print(f"✅ Tipo: {resposta['tipo']}")
-    print(f"✅ Data: {resposta['data']}")
-    print(f"✅ Preço: R$ {resposta['preco']:,.2f}")
-    print(f"✅ Médias 3em3: {len(resposta['medias_3em3dias'])} valores")
-    print("="*60)
-
-    return resposta
+    nome_xls = None  # Variável para controle do arquivo XLS temporário
+    nome_csv = f"cepea_dados_{tipo_cafe}.csv"  # Nome único do CSV por tipo
+    
+    try:
+        # FASE 1: Download e conversão de dados
+        # Baixa planilha XLS do site CEPEA (120 dias para garantir 90 úteis)
+        nome_xls = baixar_cepea(tipo_cafe, dias=120)
+        # Converte XLS para CSV formatado
+        ler_xls_para_csv(nome_xls, nome_csv)
+        
+        # FASE 2: Processamento dos dados
+        # Processa CSV e converte para estrutura interna
+        dados_processados = processar_dados(nome_csv)
+        
+        # Verifica se existem dados processados
+        if not dados_processados:
+            raise HTTPException(status_code=404, detail="Nenhum dado encontrado para o período")
+        
+        # FASE 3: Filtro temporal
+        # Seleciona apenas os 90 registros mais recentes (já ordenados)
+        dados_90_dias = dados_processados[:90]
+        
+        # FASE 4: Cálculo estatístico
+        # Calcula médias móveis de 3 em 3 dias
+        medias = calcular_medias_moveis(dados_90_dias)
+        
+        # FASE 5: Formatação da resposta
+        resposta = {
+            "tipo_cafe": tipo_cafe,
+            "dias_analisados": len(dados_90_dias),  # Quantidade real de dias processados
+            "data_mais_recente": dados_90_dias[0]['data'].strftime('%d/%m/%Y'),  # Formata data
+            "preco_atual": dados_90_dias[0]['preco'],  # Preço do dia mais recente
+            "medias_moveis_3_dias": medias  # Lista de médias calculadas
+        }
+        
+        return resposta  # Retorna resposta formatada como JSON
+        
+    except Exception as e:
+        # Tratamento genérico de exceções - captura qualquer erro não tratado
+        raise HTTPException(status_code=500, detail=f"Erro no processamento: {str(e)}")
+    
+    finally:
+        # FASE 6: Limpeza de recursos
+        # Garante que arquivos temporários sejam removidos mesmo em caso de erro
+        try:
+            # Remove arquivo XLS se existir
+            if nome_xls and os.path.exists(nome_xls):
+                os.remove(nome_xls)
+            # Remove arquivo CSV se existir
+            if nome_csv and os.path.exists(nome_csv):
+                os.remove(nome_csv)
+        except Exception as e:
+            # Log silencioso - erro na limpeza não afeta resposta principal
+            print(f"Aviso: Erro na limpeza dos arquivos: {e}")

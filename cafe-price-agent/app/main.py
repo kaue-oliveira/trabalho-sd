@@ -1,14 +1,19 @@
 from fastapi import FastAPI
 from app.routes.price import router as price_router
 
-app = FastAPI(
-    title="Agente de Preço do Café",
-    version="1.0.0",
-    description="Serviço que faz scraping dos preços, comunica com gateway e calcula médias móveis."
-)
+# Cria aplicação FastAPI principal com metadados
+app = FastAPI(title="Cafe Price Agent")
 
+# Registra roteador de preços na aplicação principal
+# Todas as rotas em price.py ficam sob o path base da aplicação
 app.include_router(price_router)
 
 @app.get("/")
-async def root():
-    return {"service": "price_agent", "status": "running"}
+def read_root():
+    """
+    Endpoint raiz para health check e verificação do serviço.
+    
+    Returns:
+        dict: Mensagem de status do serviço
+    """
+    return {"message": "Cafe Price Agent está rodando"}

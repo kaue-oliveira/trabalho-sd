@@ -1,119 +1,231 @@
-☕ Agente de Preço do Café — Price Agent
-Este serviço é um microserviço FastAPI responsável por:
+# ☕ Cafe Price Agent — Agente de Preços do Café CEPEA
 
-Fazer scraping dos preços de Café Arábica e Robusta diretamente do site:
-https://www.noticiasagricolas.com.br/cotacoes/cafe
+## 📄 Descrição
 
-Enviar novos preços para o Gateway, que salva no DataService.
+O **Cafe Price Agent** é um microserviço FastAPI especializado na coleta, processamento e análise de dados históricos de preços do café Arábica e Robusta. O sistema realiza scraping automatizado do site do **CEPEA (Centro de Estudos Avançados em Economia Aplicada)**, processa os dados e calcula estatísticas para apoio à decisão no mercado cafeeiro.
 
-Buscar o histórico dos últimos 90 dias via Gateway.
+## 🚀 Funcionalidades
 
-Calcular 30 médias, cada uma referente a um bloco de 3 dias.
+- 🌐 **Scraping Automatizado do CEPEA**: Coleta de dados históricos diretamente da fonte oficial
+- 📊 **Processamento de Dados**: Conversão e normalização de formatos (XLS → CSV → Estruturas Python)
+- 📈 **Cálculo de Médias Móveis**: Geração de 30 médias móveis de 3 em 3 dias
+- 🔍 **Validação de Tipos**: Suporte exclusivo para café Arábica e Robusta
+- 🧹 **Gestão de Recursos**: Limpeza automática de arquivos temporários
+- ⚡ **API REST High-Performance**: Implementada com FastAPI e operação assíncrona
 
-Expor endpoints REST para serem consumidos pelo Gateway e pelo frontend.
+## 🏗️ Arquitetura do Sistema
 
-📁 Estrutura de Pastas
-text
+```
 cafe-price-agent/
-│── app/
-│   ├── main.py
+├── app/
+│   ├── main.py              # Aplicação FastAPI principal
 │   ├── routes/
-│   │   └── price.py
+│   │   └── price.py         # Endpoints REST para preços
 │   ├── services/
-│   │   ├── scraper.py
-│   │   └── dataservice.py
+│   │   ├── scraper.py       # Serviço de scraping CEPEA
+│   │   └── processor.py     # Processamento de dados
 │   └── utils/
-│       └── calc.py
-│
+│       └── calc.py          # Cálculos estatísticos
 ├── requirements.txt
-└── Dockerfile
-🚀 Como Executar
-Pré-requisitos
-Python 3.11+
+└── README.md
+```
 
-Virtual Environment
+## 📦 Stack Tecnológica
 
-🔧 Configuração e Execução
-1. Configurar Ambiente Virtual
-bash
+- **Python 3.11+** - Linguagem de programação
+- **FastAPI** - Framework web moderno para APIs
+- **Pandas** - Processamento e análise de dados
+- **Calamine** - Engine para leitura de arquivos Excel (.xls)
+- **Requests** - Cliente HTTP para scraping
+- **Uvicorn** - Servidor ASGI de alta performance
+
+## 🔧 Instalação e Execução
+
+### Pré-requisitos
+
+- Python 3.11 ou superior
+- Dependências: pandas, fastapi, requests, calamine
+
+### Configuração do Ambiente
+
+1. **Clone e acesse o projeto:**
+
+```bash
+git clone <repositorio>
 cd cafe-price-agent
-python3 -m venv venv
-source venv/bin/activate
-2. Instalar Dependências
-bash
+```
+
+2. **Crie e ative ambiente virtual:**
+
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# ou
+venv\Scripts\activate    # Windows
+```
+
+3. **Instale dependências:**
+
+```bash
 pip install -r requirements.txt
-3. Executar o Serviço
-bash
+```
+
+4. **Execute o serviço:**
+
+```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8002
-📡 Endpoints
-POST /price/update/{tipo_cafe}
-Descrição: Atualiza o preço do café e retorna estatísticas
+```
 
-Parâmetros: tipo_cafe = "arabica" ou "robusta"
+### Acesso aos Serviços
 
-Resposta:
+- **API Principal:** http://localhost:8002
+- **Documentação Interativa:** http://localhost:8002/docs
+- **Documentação Alternativa:** http://localhost:8002/redoc
 
-json
+## 📡 Endpoints da API
+
+### GET /preco/{tipo_cafe}
+
+Obtém preços atualizados e médias móveis do café especificado.
+
+**Parâmetros:**
+- `tipo_cafe` (path): "arabica" ou "robusta"
+
+**Resposta:**
+
+```json
 {
-  "tipo": "arabica",
-  "data": "2025-11-14",
-  "preco": 2204.71,
-  "medias_3em3dias": [2200.50, 2195.30, ...]
+  "tipo_cafe": "arabica",
+  "dias_analisados": 90,
+  "data_mais_recente": "17/11/2025",
+  "preco_atual": 1250.75,
+  "medias_moveis_3_dias": [
+    {
+      "periodo": "15/11/2025 a 17/11/2025",
+      "media": 1248.50
+    },
+    {
+      "periodo": "12/11/2025 a 14/11/2025", 
+      "media": 1245.25
+    }
+  ]
 }
-🧪 Testar o Serviço
-bash
-curl -X POST http://localhost:8002/price/update/arabica
-🔄 Fluxo do Agente
-Scraping → Obtém preço atual do site
+```
 
-Salvar → Envia preço para DataService via Gateway
+## 🔄 Fluxo de Processamento
 
-Buscar Histórico → Obtém 90 dias de preços
+1. **Scraping CEPEA** → Download de planilha XLS com 120 dias de dados
+2. **Conversão CSV** → Transformação para formato estruturado
+3. **Processamento** → Ordenação e filtragem dos 90 dias mais recentes
+4. **Cálculo Estatístico** → Geração de 30 médias móveis (3 em 3 dias)
+5. **Formatação Resposta** → Estruturação JSON padronizada
+6. **Limpeza** → Remoção de arquivos temporários
 
-Calcular Médias → Gera 30 médias de 3 em 3 dias
+## 🎯 Exemplos de Uso
 
-Retornar JSON → Formato padronizado para o Gateway
+### Consulta Preço Arábica
 
-⚙️ Configuração
-Conexão com Data Service
-O agente conecta-se diretamente ao Data Service na porta 8001:
+```bash
+curl -X GET "http://localhost:8002/preco/arabica"
+```
 
-python
-DATA_SERVICE_URL = "http://localhost:8001"
-Porta do Serviço
-Price Agent: Porta 8002
+### Consulta Preço Robusta
 
-Data Service: Porta 8001
+```bash
+curl -X GET "http://localhost:8002/preco/robusta"
+```
 
-🐳 Execução com Docker (Opcional)
-bash
-docker build -t cafe-price-agent .
-docker run -p 8002:8002 cafe-price-agent
-📊 Funcionalidades
-✅ Scraping em tempo real dos preços do café
+### Health Check
 
-✅ Integração completa com Data Service
+```bash
+curl -X GET "http://localhost:8002/"
+```
 
-✅ Cálculo automático de 30 médias móveis
+## ⚙️ Características Técnicas
 
-✅ Validação de dados e tratamento de erros
+### Gestão Temporal
 
-✅ API REST documentada e padronizada
+- **Período Base:** 120 dias de busca para garantir 90 dias úteis
+- **Filtragem:** Seleção dos 90 registros mais recentes
+- **Formatação:** Datas no padrão DD/MM/AAAA
 
-🎯 Exemplo de Uso
-bash
-# Atualizar preço do Arábica
-curl -X POST http://localhost:8002/price/update/arabica
+### Processamento de Dados
 
-# Atualizar preço do Robusta  
-curl -X POST http://localhost:8002/price/update/robusta
-Serviço rodando em: http://localhost:8002
+- **Conversão:** XLS → CSV → Estruturas Python nativas
+- **Normalização:** Preços no formato float internacional
+- **Ordenação:** Cronológica decrescente para processamento
 
-📝 Notas
-O serviço requer que o Data Service esteja rodando na porta 8001
+### Segurança e Robustez
 
-O scraping é feito diretamente do site Notícias Agrícolas
+- **Validação:** Tipos de café estritamente validados
+- **Tratamento de Erros:** Exceções específicas por cenário
+- **Limpeza:** Garantia de remoção de arquivos temporários
 
-As médias são calculadas sempre sobre os últimos 90 dias de histórico
+## 🧪 Testes e Validação
 
-O formato de retorno é padronizado para integração com o Gateway
+### Testes Manuais via Curl
+
+```bash
+# Teste Arábica
+curl -X GET "http://localhost:8002/preco/arabica"
+
+# Teste Robusta  
+curl -X GET "http://localhost:8002/preco/robusta"
+
+# Teste Tipo Inválido
+curl -X GET "http://localhost:8002/preco/expresso"
+```
+
+### Interface Web para Testes
+
+- **Swagger UI:** http://localhost:8002/docs
+- **ReDoc:** http://localhost:8002/redoc
+
+## 📊 Metodologia Estatística
+
+### Médias Móveis
+
+- **Período:** Blocos sequenciais de 3 dias
+- **Cálculo:** Média aritmética simples
+- **Limite:** Máximo de 30 períodos (90 dias)
+- **Ordenação:** Cronológica crescente para análise temporal
+
+### Garantia de Dados
+
+- **Dias Úteis:** Busca de 120 dias para garantir 90 úteis
+- **Consistência:** Remoção de duplicatas e validação de formatos
+- **Atualidade:** Sempre os dados mais recentes disponíveis
+
+## 🚨 Tratamento de Exceções
+
+| Código HTTP | Cenário | Ação |
+|-------------|---------|------|
+| 400 | Tipo de café inválido | Mensagem de erro específica |
+| 404 | Nenhum dado encontrado | Informa período sem dados |
+| 500 | Erro interno | Log detalhado do processo |
+
+## 🔍 Detalhes de Implementação
+
+### Scraping CEPEA
+
+- **Autenticação:** Sessão HTTP com cookies
+- **Parâmetros:** Datas formatadas em DD/MM/AAAA
+- **Tabelas:** ID 23 (Arábica) e 24 (Robusta)
+- **Formato:** Requisição AJAX com header específico
+
+### Processamento CSV
+
+- **Encoding:** UTF-8 para caracteres especiais
+- **Formato Data:** DD/MM/AAAA com validação
+- **Formato Preço:** Float com conversão de formato brasileiro
+
+## 💡 Observações Importantes
+
+- ⏰ **Dias Úteis:** Sistema considera apenas dias de negociação (exclui fins de semana)
+- 📈 **Fonte Confiável:** Dados obtidos diretamente do CEPEA, órgão oficial de pesquisa
+- 🔄 **Atualização Diária:** Dados refletem preços de fechamento do dia anterior
+- 🎯 **Precisão:** Cálculos com 2 casas decimais para valores monetários
+
+## 🌐 Contexto Institucional
+
+O CEPEA é ligado à ESALQ/USP e constitui fonte oficial de referência para preços de commodities agrícolas no Brasil, sendo amplamente utilizado por agentes do mercado, pesquisadores e formuladores de políticas públicas.

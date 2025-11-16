@@ -1,35 +1,43 @@
-from typing import List, Dict
+from datetime import datetime, timedelta
 
-def gerar_medias_3em3(historico: List[Dict]) -> List[float]:
+def calcular_medias_moveis(dados_90_dias):
     """
-    Gera médias móveis de 3 em 3 dias sobre os 90 dias do histórico.
+    Calcula médias móveis de preços em períodos de 3 dias.
     
-    Parâmetro:
-        historico: lista de dicionários no formato:
-            [{"data": "YYYY-MM-DD", "preco": 1234.56}, ...]
+    Args:
+        dados_90_dias (list): Lista de dicionários com 'data' e 'preco'
+                             (90 dias mais recentes)
+                             
+    Returns:
+        list: Lista de dicionários com períodos e médias
+              (máximo 30 períodos)
+              
+    Processo:
+        1. Ordena dados por data crescente
+        2. Agrupa em blocos de 3 dias
+        3. Calcula média aritmética de cada bloco
+        4. Formata período e retorna resultados
+    """
+    # Ordena dados por data (mais antiga primeiro) para cálculo sequencial
+    # Necessário pois entrada vem ordenada por data decrescente
+    dados_ordenados = sorted(dados_90_dias, key=lambda x: x['data'])
+    
+    medias = []  # Lista para armazenar resultados
+    # Itera em passos de 3 para formar blocos de 3 dias
+    for i in range(0, len(dados_ordenados) - 2, 3):
+        periodo = dados_ordenados[i:i+3]  # Fatia bloco de 3 elementos
+        # Verifica se bloco tem exatamente 3 elementos
+        if len(periodo) == 3:
+            # Calcula média aritmética dos preços do período
+            media_preco = sum([p['preco'] for p in periodo]) / 3
+            # Formata datas para string (DD/MM/AAAA)
+            data_inicio = periodo[0]['data'].strftime('%d/%m/%Y')
+            data_fim = periodo[2]['data'].strftime('%d/%m/%Y')
             
-    Retorno:
-        lista contendo 30 médias (float)
-    """
-    if not historico:
-        return []
+            # Adiciona dicionário com informações do período
+            medias.append({
+                "periodo": f"{data_inicio} a {data_fim}",  # String descritiva
+                "media": round(media_preco, 2)  # Média com 2 casas decimais
+            })
     
-    # Extrair apenas os preços (usar somente os 90 primeiros)
-    precos = [item["preco"] for item in historico[:90] if item.get("preco") is not None]
-    
-    if len(precos) < 3:
-        return []
-    
-    # Garantir que temos pelo menos 90 preços (preencher com o último se necessário)
-    while len(precos) < 90:
-        precos.append(precos[-1] if precos else 0)
-    
-    # Calcular médias de 3 em 3 dias
-    medias = []
-    for i in range(0, 90, 3):
-        grupo = precos[i:i+3]
-        if len(grupo) == 3:
-            media = sum(grupo) / 3
-            medias.append(round(media, 2))
-    
-    return medias[:30]  # Garantir no máximo 30 médias
+    return medias[:30]  # Retorna no máximo 30 médias (90 dias / 3)
