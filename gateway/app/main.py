@@ -315,7 +315,7 @@ async def rag_search_proxy(request: dict):
     try:
         async with httpx.AsyncClient(timeout=None) as client:
             response = await client.post(
-                "http://rag_local_service:8002/rag/search",
+                "http://rag_service:8010/rag/search",
                 json=request
             )
             response.raise_for_status()

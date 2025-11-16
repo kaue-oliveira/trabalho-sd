@@ -4,7 +4,7 @@ import asyncio
 
 client = httpx.AsyncClient(timeout=None)
 
-GATEWAY_URL = os.getenv("GATEWAY_URL", "http://api-gateway:3000")
+GATEWAY_URL = os.getenv("GATEWAY_URL", "http://gateway:3000")
 
 # --------- CLIMA / PREÇO EM PARALELO ---------
 

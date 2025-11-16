@@ -3,9 +3,9 @@ from rag_loader import load_pdfs_from_folder, search
 
 app = FastAPI(title="RAG Service")
 
-@app.get("/")
-def root():
-    return {"service": "RAG Service", "status": "healthy"}
+@app.on_event("startup")
+def startup_event():
+    print("[RAG] Serviço RAG iniciado. Use /rag/reload para carregar PDFs.")
 
 @app.on_event("startup")
 def startup_event():

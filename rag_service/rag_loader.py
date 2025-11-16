@@ -5,7 +5,7 @@ from pypdf import PdfReader
 import chromadb
 import re
 
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
+GATEWAY_URL = os.getenv("GATEWAY_URL", "http://gateway:3000")
 EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
 CHROMA_PATH = os.getenv("CHROMA_PATH", "/data/chroma")
 
@@ -15,7 +15,7 @@ collection = client.get_or_create_collection("relatorios")
 
 def embed_text(text: str):
     r = requests.post(
-        f"{OLLAMA_URL}/api/embeddings",
+        f"{GATEWAY_URL}/ollama/api/embeddings",
         json={"model": EMBED_MODEL, "prompt": text}
     )
     return r.json()["embedding"]
