@@ -1,7 +1,9 @@
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import httpx
+import time
 from jose import jwt
 from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel
@@ -16,6 +18,14 @@ app = FastAPI(
     description="API Gateway para o sistema AgroAnalytics",
     version="1.0.0"
 )   
+
+# Configurar resposta JSON com UTF-8
+@app.middleware("http")
+async def add_charset_to_content_type(request: Request, call_next):
+    response = await call_next(request)
+    if "application/json" in response.headers.get("content-type", ""):
+        response.headers["content-type"] = "application/json; charset=utf-8"
+    return response
 
 # CORS para o React
 app.add_middleware(
@@ -307,6 +317,73 @@ async def get_climate_forecast(
     except httpx.RequestError as e:
         raise HTTPException(status_code=503, detail=f"Climate Agent não disponível: {str(e)}")
 
+# =====================================================
+# **ENDPOINTS PROXY PARA RAG SERVICE**
+# =====================================================
+@app.post("/rag/search")
+async def rag_search_proxy(request: dict):
+    """
+    Proxy para o RAG service - busca semântica em documentos
+    Sem autenticação pois é usado internamente pelos agentes
+    """
+    try:
+        async with httpx.AsyncClient(timeout=None) as client:
+            response = await client.post(
+                "http://rag_local_service:8002/rag/search",
+                json=request
+            )
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"RAG Service não disponível: {str(e)}")
+
+# =====================================================
+# **ENDPOINTS PROXY PARA OLLAMA**
+# =====================================================
+@app.post("/ollama/generate")
+async def proxy_ollama_generate(request: Request):
+    """
+    Proxy para Ollama direto - sem service intermediário
+    Arquitetura distribuída mantida via gateway
+    """
+    body = await request.json()
+    try:
+        start = time.perf_counter()
+        async with httpx.AsyncClient(timeout=None) as client:
+            response = await client.post(
+                "http://ollama:11434/api/generate",
+                json=body
+            )
+            duration = time.perf_counter() - start
+            resp_json = response.json()
+            # adicionar informações de timing no corpo para diagnóstico
+            if isinstance(resp_json, dict):
+                resp_json.setdefault("timings", {})
+                resp_json["timings"]["gateway_proxy_seconds"] = round(duration, 3)
+            return JSONResponse(content=resp_json, headers={"X-Proxy-Duration": f"{duration:.3f}"})
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Ollama timeout")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/ollama/api/embeddings")
+async def proxy_ollama_embeddings(request: Request):
+
+    body = await request.json()
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                "http://ollama:11434/api/embeddings",
+                json=body
+            )
+            resp_json = response.json()
+            return JSONResponse(content=resp_json)
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail="Ollama embeddings timeout")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
