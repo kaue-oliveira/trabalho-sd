@@ -13,6 +13,13 @@ class LoginResponse(BaseModel):
     token_type: str = "bearer"
     user: dict
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
 # Schemas para Usuario
 class UsuarioBase(BaseModel):
     nome: str
