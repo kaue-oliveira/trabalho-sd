@@ -2,12 +2,9 @@ import httpx
 import os
 import asyncio
 
-# Cliente assíncrono compartilhado com timeout padrão de 210s
-client = httpx.AsyncClient(timeout=210)
+client = httpx.AsyncClient(timeout=None)
 
-GATEWAY_URL = os.getenv("GATEWAY_URL", "http://gateway:3000")
-RAG_URL = os.getenv("RAG_URL", "http://rag_service:8002")
-OLLAMA_SERVICE_URL = os.getenv("OLLAMA_SERVICE_URL", "http://ollama_service:8004/generate")
+GATEWAY_URL = os.getenv("GATEWAY_URL", "http://api-gateway:3000")
 
 # --------- CLIMA / PREÇO EM PARALELO ---------
 
@@ -49,13 +46,71 @@ async def rag_search_async(query: str, k: int = 4):
 # --------- OLLAMA ---------
 
 async def solicitar_decisao_ollama_async(payload: dict):
-    """Gera decisão via Ollama service"""
-    r = await client.post(OLLAMA_SERVICE_URL, json=payload)
-    r.raise_for_status()
-    return r.json()
+    """Gera decisão via Ollama direto - sem service intermediário"""
+    import time
+    import json
+    
+    clima = payload.get("clima", {})
+    preco = payload.get("preco", {})
+    relatorios = payload.get("relatorios", [])
+    localidade = payload.get("localidade", "")
+    data_colheita = payload.get("data_colheita", "")
 
-# --------- 🚀 PARALELIZAÇÃO: Buscar tudo em paralelo ---------
+    prompt = f"""
+        Você é um especialista em cafeicultura.
+        Use os dados abaixo para recomendar: VENDER ou AGUARDAR.
 
+        Localidade: {localidade}
+        Data de colheita: {data_colheita}
+
+        Clima:
+        {clima}
+
+        Preços:
+        {preco}
+
+        Relatórios técnicos:
+        {relatorios}
+
+        Responda APENAS um JSON válido:
+        {{
+        "decision": "vender / aguardar",
+        "explanation": "máximo 200 palavras"
+        }}
+        """
+
+    try:
+        start = time.perf_counter()
+        
+        r = await client.post(
+            f"{GATEWAY_URL}/ollama/generate",
+            json={
+                "model": "phi3:mini",
+                "prompt": prompt,
+                "stream": False,
+                "format": "json"
+            }
+        )
+        duration = time.perf_counter() - start
+        r.raise_for_status()
+
+        raw = r.json().get("response", "")
+        decision_data = json.loads(raw)
+
+        return {
+            "decision": decision_data.get("decision", "aguardar").lower(),
+            "explanation": decision_data.get("explanation", ""),
+            "ollama_time_seconds": round(duration, 3)
+        }
+
+    except Exception as e:
+        return {
+            "decision": "aguardar",
+            "explanation": f"Erro ao consultar modelo: {e}",
+            "ollama_time_seconds": None
+        }
+
+# --------- BUSCA EM PARALELO ---------
 async def fetch_all_parallel(payload: dict, rag_query: str) -> tuple[dict, dict, list]:
     """
     Busca clima, preço e RAG em paralelo usando asyncio.gather
@@ -79,7 +134,6 @@ async def fetch_all_parallel(payload: dict, rag_query: str) -> tuple[dict, dict,
         except Exception:
             return []
     
-    # Executar todas as 3 requisições em paralelo
     clima, preco, rels = await asyncio.gather(
         safe_get_climate(),
         safe_get_price(),

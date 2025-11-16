@@ -18,13 +18,11 @@ async def recommend(req: Requisicao):
     query_parts.append("preço mercado recomendação venda")
     query = " ".join(query_parts)
     
-    # 🚀 PARALELIZAÇÃO: Buscar clima, preço e RAG simultaneamente
     clima, preco, rels = await fetch_all_parallel(
         req.model_dump(),
         query
     )
 
-    # Montar payload para Ollama
     payload = {
         "localidade": req.localidade,
         "data_colheita": req.data_colheita,
@@ -42,16 +40,23 @@ async def recommend(req: Requisicao):
     if not out.get("decision"):
         raise HTTPException(status_code=500, detail="Falha ao gerar decisão final.")
 
-    # Extrair apenas as fontes (arquivos PDF) consultadas, sem duplicatas
-    fontes = list(set([
-        rel.get("metadata", {}).get("source", "Desconhecido")
-        for rel in rels
-    ]))
+    # Extrair e logar as fontes (arquivos PDF) consultadas
+    fontes = []
+    if rels:  # Se há resultados RAG
+        fontes = list(set([
+            rel.get("metadata", {}).get("file", "Desconhecido") 
+            for rel in rels if rel.get("metadata") and rel.get("metadata").get("file")
+        ]))
+    
+    # Log das fontes consultadas (não retornadas na API)
+    if fontes:
+        print(f"[RAG] PDFs utilizados na análise: {', '.join(fontes)}")
+    else:
+        print("[RAG] Nenhum PDF específico foi utilizado na análise")
 
     return Resposta(
         decision=out["decision"],
         explanation=out.get("explanation", ""),
-        fontes_consultadas=fontes,
     )
 
 @app.get("/")

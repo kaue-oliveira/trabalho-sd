@@ -8,9 +8,17 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
+      - /dev/dri:/dev/dri  # Intel GPU device
+    devices:
+      - /dev/dri:/dev/dri  # Intel GPU access
     environment:
-      - OLLAMA_NUM_PARALLEL=4
-      - OLLAMA_MAX_LOADED_MODELS=2
+      - OLLAMA_NUM_PARALLEL=1
+      - OLLAMA_MAX_LOADED_MODELS=1
+      - OLLAMA_INTEL_GPU=1  # Habilita Intel GPU
+      - OLLAMA_FLASH_ATTENTION=1
+      - OLLAMA_CONTEXT_LENGTH=2048
+    group_add:
+      - video  # Acesso ao grupo video para GPU
 
   gateway:
     build: ./gateway
@@ -28,7 +36,7 @@ services:
       - CHROMA_PATH=/data/chroma
     volumes:
       - rag_data:/data
-      - ./pdfs:/app/pdfs
+      - ./rag_service/pdfs:/app/pdfs
     depends_on:
       - ollama
     ports:
@@ -41,22 +49,12 @@ services:
     depends_on:
       - gateway
       - rag_service
-      - ollama_service
+      - ollama
     environment:
       - GATEWAY_URL=http://gateway:3000
     ports:
       - "8001:8001"
 
-  ollama_service:
-    build: ./ollama_service
-    container_name: ollama_service
-    depends_on:
-      - ollama
-    environment:
-      - OLLAMA_API_URL=http://ollama:11434/api/generate
-      - MODEL=phi3:mini
-    ports:
-      - "8004:8004"
 
 volumes:
   ollama_data:

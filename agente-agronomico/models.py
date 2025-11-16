@@ -11,4 +11,3 @@ class Requisicao(BaseModel):
 class Resposta(BaseModel):
     decision: str
     explanation: str
-    fontes_consultadas: List[str] = []  # Lista de fontes (arquivos PDF) consultadas
