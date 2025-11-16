@@ -328,7 +328,7 @@ async def criar_analise(analise_data: dict, payload: dict = Depends(verify_token
 # **ENDPOINTS PROXY PARA CLIMATE AGENT**
 # =====================================================
 @app.get("/climate/forecast")
-async def get_climate_forecast(cidade: str, estado: str, payload: dict = Depends(verify_token), client: httpx.AsyncClient = Depends(get_climate_agent_client)):
+async def get_climate_forecast(cidade: str, estado: str, client: httpx.AsyncClient = Depends(get_climate_agent_client)):
     try:
         location = f"{cidade},{estado}"
         response = await client.get(f"/climate/forecast/{location}")
@@ -354,10 +354,10 @@ class AgroAnalysisResponse(BaseModel):
     decisao: str
     explicacao_decisao: str
 
-app.post("/agro/recommend", response_model=AgroAnalysisResponse)
+@app.post("/agro/recommend", response_model=AgroAnalysisResponse)
 async def analyze_coffee(analysis_data: AgroAnalysisRequest, payload: dict = Depends(verify_token), agro_client: httpx.AsyncClient = Depends(get_agro_agent_client)):
     try:
-        response = await agro_client.post("recommend", json=analysis_data.dict())
+        response = await agro_client.post("/recommend", json=analysis_data.dict())
         response.raise_for_status()
         return response.json()
     except httpx.HTTPStatusError as e:

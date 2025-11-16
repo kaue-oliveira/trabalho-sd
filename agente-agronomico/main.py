@@ -6,26 +6,38 @@ app = FastAPI(title="Agente Agronômico")
 
 @app.post("/recommend", response_model=Resposta)
 async def recommend(req: Requisicao):
-    # Construir query RAG antes de paralelizar
-    query_parts = []
-    if req.localidade:
-        query_parts.append(f"região {req.localidade}")
-    if req.tipo_grao:
-        query_parts.append(f"café {req.tipo_grao}")
-    if req.data_colheita:
-        query_parts.append(f"colheita {req.data_colheita}")
+    # Construir localidade a partir de cidade e estado
+    localidade = f"{req.cidade},{req.estado}"
     
-    query_parts.append("preço mercado recomendação venda")
+    # Construir query RAG
+    query_parts = [
+        f"café {req.tipo_cafe}",
+        f"região {req.cidade} {req.estado}",
+        f"colheita {req.data_colheita}",
+        f"qualidade {req.estado_cafe}",
+        "preço mercado recomendação venda"
+    ]
     query = " ".join(query_parts)
     
+    # Buscar dados em paralelo
     clima, preco, rels = await fetch_all_parallel(
-        req.model_dump(),
+        {
+            "cidade": req.cidade,
+            "estado": req.estado,
+            "data_colheita": req.data_colheita,
+            "tipo_cafe": req.tipo_cafe
+        },
         query
     )
 
     payload = {
-        "localidade": req.localidade,
+        "tipo_cafe": req.tipo_cafe,
         "data_colheita": req.data_colheita,
+        "quantidade": req.quantidade,
+        "cidade": req.cidade,
+        "estado": req.estado,
+        "estado_cafe": req.estado_cafe,
+        "localidade": localidade,
         "clima": clima,
         "preco": preco,
         "relatorios": rels
@@ -37,7 +49,7 @@ async def recommend(req: Requisicao):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao gerar decisão: {str(e)}")
 
-    if not out.get("decision"):
+    if not out.get("decisao"):
         raise HTTPException(status_code=500, detail="Falha ao gerar decisão final.")
 
     # Extrair e logar as fontes (arquivos PDF) consultadas
@@ -55,10 +67,14 @@ async def recommend(req: Requisicao):
         print("[RAG] Nenhum PDF específico foi utilizado na análise")
 
     return Resposta(
-        decision=out["decision"],
-        explanation=out.get("explanation", ""),
+        decisao=out["decisao"],
+        explicacao_decisao=out.get("explicacao", ""),
     )
 
 @app.get("/")
 def root():
     return {"status": "ok", "service": "agente_agronomico"}
+
+@app.get("/health")
+def health():
+    return {"status": "healthy", "service": "agente_agronomico"}

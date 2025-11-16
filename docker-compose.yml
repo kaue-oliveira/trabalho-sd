@@ -54,6 +54,8 @@ services:
       context: ./agente-agronomico
       dockerfile: Dockerfile
     container_name: agro-agent
+    environment:
+      GATEWAY_URL: "http://gateway:3000"
     ports:
       - "8101:8000"
     networks:
@@ -83,6 +85,7 @@ services:
       CLIMATE_AGENT_URL: "http://cafe-climate-agent:8000"
       AGRO_AGENT_URL: "http://agro-agent:8000"
       RAG_SERVICE_URL: "http://rag-service:8000"
+      OLLAMA_URL: "http://ollama:11434"
     ports:
       - "3000:3000"
     depends_on:

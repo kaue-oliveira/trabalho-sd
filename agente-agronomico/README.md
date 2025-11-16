@@ -23,18 +23,21 @@ sudo docker-compose up -d agente_agronomico
 
 1. **Verificar se está funcionando**
 ```bash
-curl http://localhost:8001/
+curl http://localhost:8101/
 ```
 
 2. **Pedir recomendação de venda**
 ```bash
-curl -X POST http://localhost:8001/recommend \
+time curl -X POST http://localhost:8101/recommend \
   -H "Content-Type: application/json" \
   -d '{
-    "localidade": "Brasília",
-    "tipo_grao": "arábica",
-    "data_colheita": "2025-06-01"
-  }'
+    "tipo_cafe": "arabica",
+    "data_colheita": "2025-07-15",
+    "quantidade": 150.5,
+    "cidade": "Patrocínio",
+    "estado": "Minas Gerais",
+    "estado_cafe": "cereja"
+  }' 
 ```
 
 3. **Ver logs dos PDFs consultados**
