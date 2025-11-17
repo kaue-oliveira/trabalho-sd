@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from .config import (
     GATEWAY_HOST, GATEWAY_PORT, CLIMATE_AGENT_URL, DATA_SERVICE_URL,
     SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, RAG_SERVICE_URL,
-    AGRO_AGENT_URL, OLLAMA_URL
+    AGRO_AGENT_URL, OLLAMA_URL, PRICE_AGENT_URL
 )
 
 app = FastAPI(
@@ -75,6 +75,10 @@ async def get_data_service_client():
     async with httpx.AsyncClient(base_url=DATA_SERVICE_URL, timeout=30.0) as client:
         yield client
 
+async def get_price_agent_client():
+    async with httpx.AsyncClient(base_url=PRICE_AGENT_URL, timeout=30.0) as client:
+        yield client
+
 async def get_agro_agent_client():
     async with httpx.AsyncClient(base_url=AGRO_AGENT_URL, timeout=None) as client:
         yield client
@@ -125,6 +129,12 @@ async def full_health_check(
         data_status = "unreachable"
 
     try:
+        price_response = await price_client.get("/health")
+        price_status = "healthy" if price_response.status_code == 200 else "unhealthy"
+    except Exception:
+        price_status = "unreachable"
+
+    try:
         agro_response = await agro_client.get("/health")
         agro_status = "healthy" if agro_response.status_code == 200 else "unhealthy"
     except Exception:
@@ -146,6 +156,7 @@ async def full_health_check(
         "gateway": "healthy",
         "data_service": data_status,
         "climate_agent": climate_status,
+        "price_agent": price_status,
         "agro_agent": agro_status,
         "rag_service": rag_status,
         "ollama": ollama_status,
@@ -338,6 +349,29 @@ async def get_climate_forecast(cidade: str, estado: str, client: httpx.AsyncClie
         raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
     except httpx.RequestError as e:
         raise HTTPException(status_code=503, detail=f"Climate Agent não disponível: {str(e)}")
+
+
+# =====================================================
+# **ENDPOINTS PROXY PARA PRICE AGENT**
+# =====================================================
+@app.get("/price/{tipo_cafe}")
+async def get_coffee_price(
+    tipo_cafe: str, 
+    payload: dict = Depends(verify_token),
+    price_client: httpx.AsyncClient = Depends(get_price_agent_client)
+):
+    try:
+        response = await price_client.get(f"/preco/{tipo_cafe}")
+        response.raise_for_status()
+        return response.json()
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code in [400, 404]:
+            detail = e.response.json().get("detail", "Erro no price agent")
+            raise HTTPException(status_code=e.response.status_code, detail=detail)
+        raise HTTPException(status_code=e.response.status_code, detail=f"Erro no price agent: {e.response.text}")
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail=f"Price Agent não disponível: {str(e)}")
+    
 
 # =====================================================
 # **ENDPOINTS PROXY PARA AGRO AGENT**

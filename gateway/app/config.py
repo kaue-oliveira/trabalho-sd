@@ -11,6 +11,7 @@ DATA_SERVICE_URL = os.getenv("DATA_SERVICE_URL", "http://data-service:8000")
 CLIMATE_AGENT_URL = os.getenv("CLIMATE_AGENT_URL", "http://climate-agent:8000")
 AGRO_AGENT_URL = os.getenv("AGRO_AGENT_URL", "http://agro-agent:8000")
 RAG_SERVICE_URL = os.getenv("RAG_SERVICE_URL", "http://rag-service:8000")
+PRICE_AGENT_URL = os.getenv("PRICE_AGENT_URL", "http://price-agent:8000")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
 
 # Configurações JWT
