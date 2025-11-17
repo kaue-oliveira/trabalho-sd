@@ -357,7 +357,6 @@ async def get_climate_forecast(cidade: str, estado: str, client: httpx.AsyncClie
 @app.get("/price/{tipo_cafe}")
 async def get_coffee_price(
     tipo_cafe: str, 
-    payload: dict = Depends(verify_token),
     price_client: httpx.AsyncClient = Depends(get_price_agent_client)
 ):
     try:

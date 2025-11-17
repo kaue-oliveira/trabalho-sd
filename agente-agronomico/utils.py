@@ -44,7 +44,7 @@ async def get_price_async(payload: dict) -> dict:
     tipo_cafe = payload.get("tipo_cafe", "arabica")
     
     try:
-        r = await client.get(f"{GATEWAY_URL}/price", params={"tipo_cafe": tipo_cafe})
+        r = await client.get(f"{GATEWAY_URL}/price/{tipo_cafe}")
         r.raise_for_status()
         return r.json()
     except Exception as e:
@@ -108,6 +108,7 @@ async def solicitar_decisao_ollama_async(payload: dict):
         
         # Log dos dados climáticos que estão sendo enviados ao Ollama
         print(f"[CLIMA] Dados climáticos enviados ao Ollama: {clima}")
+        print(f"[PREÇO] Dados de preço enviados ao Ollama: {preco}")
         
         r = await client.post(
             f"{GATEWAY_URL}/ollama/generate",
