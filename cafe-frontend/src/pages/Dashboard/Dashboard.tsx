@@ -26,7 +26,6 @@ const Dashboard: React.FC = () => {
 
   // Calcular estatísticas
   const sellNowCount = analisesUsuario.filter(a => a.decisao === "VENDER").length;
-  const sellPartiallyCount = analisesUsuario.filter(a => a.decisao === "VENDER_PARCIALMENTE").length;
   const waitCount = analisesUsuario.filter(a => a.decisao === "AGUARDAR").length;
   const totalAnalises = analisesUsuario.length;
 
@@ -36,8 +35,7 @@ const Dashboard: React.FC = () => {
     date: new Date(analise.data_colheita).toLocaleDateString('pt-BR'),
     coffeeType: analise.tipo_cafe,
     quantity: `${analise.quantidade} kg`,
-    decision: analise.decisao === "VENDER" ? "Vender Agora" : 
-              analise.decisao === "VENDER_PARCIALMENTE" ? "Vender Parcialmente" : 
+    decision: analise.decisao === "VENDER" ? "Vender Agora" :  
               "Aguardar"
   });
 
@@ -78,10 +76,6 @@ const Dashboard: React.FC = () => {
                 <p className={styles.statValue}>{sellNowCount}</p>
               </div>
               <div className={styles.statCard}>
-                <p className={styles.statLabel}>Vender Parcialmente</p>
-                <p className={styles.statValue}>{sellPartiallyCount}</p>
-              </div>
-              <div className={styles.statCard}>
                 <p className={styles.statLabel}>Aguardar</p>
                 <p className={styles.statValue}>{waitCount}</p>
               </div>
@@ -118,8 +112,7 @@ const Dashboard: React.FC = () => {
                       <td>
                         <div className={
                           analysis.decision === "Vender Agora" ? styles.decisionSellNow :
-                            analysis.decision === "Vender Parcialmente" ? styles.decisionSellPartially :
-                              styles.decisionWait
+                            styles.decisionWait
                         }>
                           {analysis.decision}
                         </div>
