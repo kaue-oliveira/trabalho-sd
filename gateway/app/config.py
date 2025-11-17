@@ -8,7 +8,7 @@ GATEWAY_PORT = int(os.getenv("GATEWAY_PORT", "3000"))
 
 # URL dos serviços/agentes
 DATA_SERVICE_URL = os.getenv("DATA_SERVICE_URL", "http://data-service:8000")
-CLIMATE_AGENT_URL = os.getenv("CLIMATE_AGENT_URL", "http://climate-agent:8000")
+CLIMATE_AGENT_URL = os.getenv("CLIMATE_AGENT_URL", "http://cafe-climate-agent:8000")
 AGRO_AGENT_URL = os.getenv("AGRO_AGENT_URL", "http://agro-agent:8000")
 RAG_SERVICE_URL = os.getenv("RAG_SERVICE_URL", "http://rag-service:8000")
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
