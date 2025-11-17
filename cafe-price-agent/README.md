@@ -1,4 +1,4 @@
-# ☕ Cafe Price Agent — Agente de Preços do Café CEPEA
+# ☕ Cafe Price Agent
 
 ## 📄 Descrição
 
@@ -6,7 +6,7 @@ O **Cafe Price Agent** é um microserviço FastAPI especializado na coleta, proc
 
 ## 🚀 Funcionalidades
 
-- 🌐 **Scraping Automatizado do CEPEA**: Coleta de dados históricos diretamente da fonte oficial
+- 🌐 **Scraping Automatizado**: Coleta de dados históricos diretamente da fonte oficial
 - 📊 **Processamento de Dados**: Conversão e normalização de formatos (XLS → CSV → Estruturas Python)
 - 📈 **Cálculo de Médias Móveis**: Geração de 30 médias móveis de 3 em 3 dias
 - 🔍 **Validação de Tipos**: Suporte exclusivo para café Arábica e Robusta
