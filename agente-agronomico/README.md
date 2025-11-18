@@ -44,7 +44,7 @@ time curl -X POST http://localhost:8101/recommend \
 ```bash
 curl -X POST http://localhost:3000/auth/login -H "Content-Type: application/json" -d '{"email":"ana.cafeicultora@email.com","password":"CafeAna123"}'
 export TOKEN=""
-curl -X POST http://localhost:3000/agro/recommend \
+time curl -X POST http://localhost:3000/agro/recommend \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -57,9 +57,9 @@ curl -X POST http://localhost:3000/agro/recommend \
   }'
 ```
 
-3. **Ver logs dos PDFs consultados**
+3. **Ver logs do agente agronomico**
 ```bash
-sudo docker logs agro-agent --tail 20
+sudo docker logs agro-agent --tail 10
 ```
 
 ## Como Funciona

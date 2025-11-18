@@ -6,7 +6,7 @@ import json
 
 client = httpx.AsyncClient(timeout=None)
 
-GATEWAY_URL = os.getenv("GATEWAY_URL", "http://api-gateway:3000")
+GATEWAY_URL = os.getenv("GATEWAY_URL", "http://gateway:3000")
 
 # --------- CLIMA / PREÇO EM PARALELO ---------
 
@@ -44,7 +44,7 @@ async def get_price_async(payload: dict) -> dict:
     tipo_cafe = payload.get("tipo_cafe", "arabica")
     
     try:
-        r = await client.get(f"{GATEWAY_URL}/price", params={"tipo_cafe": tipo_cafe})
+        r = await client.get(f"{GATEWAY_URL}/price/{tipo_cafe}")
         r.raise_for_status()
         return r.json()
     except Exception as e:
@@ -99,12 +99,16 @@ async def solicitar_decisao_ollama_async(payload: dict):
         Responda APENAS um JSON válido no formato:
         {{
         "decisao": "vender" ou "aguardar",
-        "explicacao": "justificativa detalhada da recomendação (máximo 200 palavras)"
+        "explicacao": "justificativa detalhada da recomendação em português (máximo 200 palavras)"
         }}
         """
 
     try:
         start = time.perf_counter()
+        
+        # Log dos dados climáticos que estão sendo enviados ao Ollama
+        print(f"[CLIMA] Dados climáticos enviados ao Ollama: {clima}")
+        print(f"[PREÇO] Dados de preço enviados ao Ollama: {preco}")
         
         r = await client.post(
             f"{GATEWAY_URL}/ollama/generate",

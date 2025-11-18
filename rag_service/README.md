@@ -6,42 +6,48 @@ Sistema de busca em documentos PDF usando IA. Indexa 28 PDFs sobre café e permi
 ## Estrutura de Arquivos
 ```
 rag_service/
-├── main.py          # API FastAPI
-├── rag_loader.py    # Lógica de busca
-├── pdfs/            # 28 arquivos PDF
-└── Dockerfile       # Container
+├── main.py          
+├── rag_loader.py    
+├── pdfs/            
+└── Dockerfile       
 ```
 
 ## Como Usar
 
 ### Iniciar o serviço
 ```bash
-sudo docker-compose up -d rag_local_service
+sudo docker-compose up -d rag-service
 ```
 
 ### Testes Básicos
 
 1. **Verificar se está funcionando**
 ```bash
-curl http://localhost:8002/
+curl http://localhost:8102/
 ```
 
 2. **Ver quantos documentos foram indexados**
 ```bash
-curl http://localhost:8002/rag/status
+curl http://localhost:8102/rag/status
 ```
 
 3. **Buscar informação nos PDFs**
 ```bash
-curl -X POST http://localhost:8002/rag/search \
+curl -X POST http://localhost:8102/rag/search \
   -H "Content-Type: application/json" \
   -d '{"query": "mudanças climáticas no café", "k": 3}'
 ```
 
 4. **Recarregar documentos**
 ```bash
-curl -X POST http://localhost:8002/rag/reload
+curl -X POST http://localhost:8102/rag/reload
 ```
+
+3. **Ver logs dos PDFs consultados**
+```bash
+sudo docker logs rag-service --tail 10
+```
+
 
 ## Como Funciona
 1. Lê PDFs da pasta `/pdfs`
