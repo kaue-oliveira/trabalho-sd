@@ -8,6 +8,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
 
   const userName = user?.nome || "Usuário";
+  const firstTwoNames = userName.split(" ").slice(0, 2).join(" ");
   
   const handleNewAnalysis = () => {
     console.log("Nova análise iniciada");
@@ -50,7 +51,7 @@ const Dashboard: React.FC = () => {
           <section className={styles.heroSection}>
             <div className={styles.heroContent}>
               <div className={styles.heroText}>
-                <h1 className={styles.heroTitle}>Bem-vindo de volta, {userName}!</h1>
+                <h1 className={styles.heroTitle}>Bem-vindo de volta, {firstTwoNames}!</h1>
                 <p className={styles.heroSubtitle}>
                   Sua plataforma para análise inteligente de decisões de venda do café.
                 </p>

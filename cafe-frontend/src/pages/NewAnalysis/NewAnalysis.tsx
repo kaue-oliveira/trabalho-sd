@@ -8,7 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const NewAnalysis: React.FC = () => {
   const { notification, showNotification, closeNotification } = useNotification();
-  const { token, addAnalise } = useAuth();
+  const { token, addAnalise, logout } = useAuth();
 
   const [formData, setFormData] = useState({
     tipo_cafe: '',
@@ -23,6 +23,9 @@ const NewAnalysis: React.FC = () => {
     decisao: string;
     explicacao_decisao: string;
   } | null>(null);
+
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -47,14 +50,16 @@ const NewAnalysis: React.FC = () => {
       return;
     }
 
+    const tokenCheck = requireAuthToken(token);
+    if (!tokenCheck.isValid) {
+      showNotification('error', tokenCheck.message!);
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAnalysisResult(null);
 
     try {
-      const tokenCheck = requireAuthToken(token);
-      if (!tokenCheck.isValid) {
-        showNotification('error', tokenCheck.message!);
-        return;
-      }
-
       const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
 
       const analysisPayload = {
@@ -76,18 +81,33 @@ const NewAnalysis: React.FC = () => {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || 'Erro na análise agronômica');
+        const contentType = response.headers.get("content-type");
+
+        if (response.status === 401) {
+          showNotification("error", "Sua sessão expirou. Faça login novamente.");
+          setTimeout(() => {
+            logout();
+          }, 4000);
+          return;
+        }
+
+        if (contentType && contentType.includes("application/json")) {
+          const data = await response.json();
+          throw new Error(data.detail || JSON.stringify(data));
+        } else {
+          const text = await response.text();
+          throw new Error(text);
+        }
       }
 
       const analysisResult = await response.json();
-
       setAnalysisResult(analysisResult);
       showNotification('success', 'Análise agronômica concluída com sucesso!');
 
     } catch (error) {
-      console.error('Erro na análise agronômica:', error);
       showNotification('error', 'Erro ao realizar análise. Tente novamente.');
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -97,22 +117,31 @@ const NewAnalysis: React.FC = () => {
       return;
     }
 
+    const tokenCheck = requireAuthToken(token);
+    if (!tokenCheck.isValid) {
+      showNotification('error', tokenCheck.message!);
+      return;
+    }
+
+    setIsSaving(true);
+
     try {
       const analysisToSave = {
-        ...formData,
+        tipo_cafe: formData.tipo_cafe,
+        data_colheita: formData.data_colheita,
         quantidade: parseFloat(formData.quantidade),
+        cidade: formData.cidade,
+        estado: formData.estado,
+        estado_cafe: formData.estado_cafe,
         data_analise: new Date().toISOString().split('T')[0],
-        ...analysisResult
+        decisao: analysisResult.decisao.toUpperCase(),
+        explicacao_decisao: analysisResult.explicacao_decisao
       };
 
-      const tokenCheck = requireAuthToken(token);
-      if (!tokenCheck.isValid) {
-        showNotification('error', tokenCheck.message!);
-        return;
-      }
-
       const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
-      const response = await fetch(`${API_BASE}/analises`, {
+      const url = `${API_BASE}/analises`;
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -122,8 +151,32 @@ const NewAnalysis: React.FC = () => {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        showNotification('error', `Erro ao salvar análise: ${errorText}`);
+        if (response.status === 401) {
+          showNotification("error", "Sua sessão expirou. Faça login novamente.");
+          setTimeout(() => {
+            logout();
+          }, 4000);
+          setIsSaving(false);
+          return;
+        }
+
+        let errorMessage = 'Erro desconhecido';
+        const contentType = response.headers.get('content-type');
+
+        try {
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            errorMessage = errorData.detail || errorData.message || JSON.stringify(errorData);
+          } else {
+            const errorText = await response.text();
+            errorMessage = errorText || `Status ${response.status}`;
+          }
+        } catch (e) {
+          errorMessage = `Status ${response.status} - Não foi possível ler a resposta`;
+        }
+
+        showNotification('error', `Erro ao salvar análise: ${errorMessage}`);
+        setIsSaving(false);
         return;
       }
 
@@ -137,7 +190,6 @@ const NewAnalysis: React.FC = () => {
 
       showNotification('success', 'Análise salva com sucesso!');
 
-      // Limpar formulário após salvar
       setFormData({
         tipo_cafe: '',
         data_colheita: '',
@@ -149,31 +201,22 @@ const NewAnalysis: React.FC = () => {
       setAnalysisResult(null);
 
     } catch (error) {
-      showNotification('error', 'Erro ao salvar análise. Tente novamente.');
+      showNotification('error', `Erro ao salvar análise: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const getDecisionBadgeClass = (decisao: string) => {
-    switch (decisao) {
-      case 'VENDER':
-        return styles.sellBadge;
-      case 'AGUARDAR':
-        return styles.waitBadge;
-      default:
-        return styles.sellBadge;
-    }
+    const d = decisao.toUpperCase();
+    return d === 'AGUARDAR' ? styles.waitBadge : styles.sellBadge;
   };
 
   const getDecisionText = (decisao: string) => {
-    switch (decisao) {
-      case 'VENDER':
-        return 'VENDER';
-      case 'AGUARDAR':
-        return 'AGUARDAR';
-      default:
-        return 'VENDER';
-    }
+    const d = decisao.toUpperCase();
+    return d === 'AGUARDAR' ? 'AGUARDAR' : 'VENDER';
   };
+
 
   return (
     <div className={styles.page}>
@@ -198,6 +241,7 @@ const NewAnalysis: React.FC = () => {
                       className={styles.select}
                       value={formData.tipo_cafe}
                       onChange={(e) => handleInputChange('tipo_cafe', e.target.value)}
+                      disabled={isAnalyzing}
                       required
                     >
                       <option value="">Selecione o tipo de café</option>
@@ -214,6 +258,7 @@ const NewAnalysis: React.FC = () => {
                         type="date"
                         value={formData.data_colheita}
                         onChange={(e) => handleInputChange('data_colheita', e.target.value)}
+                        disabled={isAnalyzing}
                         required
                       />
                     </div>
@@ -228,6 +273,7 @@ const NewAnalysis: React.FC = () => {
                         placeholder="Ex: 5000"
                         value={formData.quantidade}
                         onChange={(e) => handleInputChange('quantidade', e.target.value)}
+                        disabled={isAnalyzing}
                         required
                       />
                     </label>
@@ -238,6 +284,7 @@ const NewAnalysis: React.FC = () => {
                         className={styles.select}
                         value={formData.estado_cafe}
                         onChange={(e) => handleInputChange('estado_cafe', e.target.value)}
+                        disabled={isAnalyzing}
                         required
                       >
                         <option value="">Selecione o estado</option>
@@ -257,6 +304,7 @@ const NewAnalysis: React.FC = () => {
                         placeholder="Ex: Varginha"
                         value={formData.cidade}
                         onChange={(e) => handleInputChange('cidade', e.target.value)}
+                        disabled={isAnalyzing}
                         required
                       />
                     </label>
@@ -267,6 +315,7 @@ const NewAnalysis: React.FC = () => {
                         className={styles.select}
                         value={formData.estado}
                         onChange={(e) => handleInputChange('estado', e.target.value)}
+                        disabled={isAnalyzing}
                         required
                       >
                         <option value="">Selecione o estado</option>
@@ -305,15 +354,31 @@ const NewAnalysis: React.FC = () => {
                     className={styles.analyzeButton}
                     type="button"
                     onClick={handleAnalyze}
+                    disabled={isAnalyzing}
                   >
-                    ANALISAR
+                    {isAnalyzing ? (
+                      <>
+                        <span className={styles.spinner}></span>
+                        ANALISANDO...
+                      </>
+                    ) : (
+                      'ANALISAR'
+                    )}
                   </button>
                 </form>
               </div>
 
               <div className={styles.resultsPanel}>
                 <div className={styles.resultsContent}>
-                  {analysisResult ? (
+                  {isAnalyzing ? (
+                    <div className={styles.loadingState}>
+                      <div className={styles.loadingSpinner}></div>
+                      <h3 className={styles.loadingTitle}>Analisando dados...</h3>
+                      <p className={styles.loadingText}>
+                        Nossa IA está processando as informações do seu café para fornecer a melhor recomendação.
+                      </p>
+                    </div>
+                  ) : analysisResult ? (
                     <div className={styles.resultSection}>
                       <div className={styles.resultHeader}>
                         <div className={`${styles.resultBadge} ${getDecisionBadgeClass(analysisResult.decisao)}`}>
@@ -333,8 +398,16 @@ const NewAnalysis: React.FC = () => {
                           className={styles.saveButton}
                           type="button"
                           onClick={handleSaveAnalysis}
+                          disabled={isSaving}
                         >
-                          Salvar Análise
+                          {isSaving ? (
+                            <>
+                              <span className={styles.smallSpinner}></span>
+                              Salvando...
+                            </>
+                          ) : (
+                            'Salvar Análise'
+                          )}
                         </button>
                       </div>
                     </div>

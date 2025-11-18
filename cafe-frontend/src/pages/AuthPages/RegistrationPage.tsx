@@ -32,7 +32,7 @@ const RegistrationPage: React.FC = () => {
       placeholder: '••••••••',
       icon: 'lock',
       showPasswordToggle: true,
-      helperText: 'Use pelo menos 8 caracteres com letras e números'
+      helperText: 'Use pelo menos 6 caracteres com letras e números'
     },
     {
       name: 'confirmPassword',

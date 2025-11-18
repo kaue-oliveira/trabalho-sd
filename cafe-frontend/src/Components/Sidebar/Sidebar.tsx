@@ -9,6 +9,7 @@ const Sidebar: React.FC = () => {
   const { user, logout } = useAuth();
   
   const userName = user?.nome || "Usuário";
+  const firstTwoNames = userName.split(" ").slice(0, 2).join(" ");
   const userInitial = userName.charAt(0).toUpperCase();
 
   const handleLogout = () => {
@@ -75,7 +76,7 @@ const Sidebar: React.FC = () => {
             }`}
           >
           <div className={styles.avatarCircle}>{userInitial}</div>
-          <p className={styles.profileName}>{userName}</p>
+          <p className={styles.profileName}>{firstTwoNames}</p>
         </Link>
 
         <button onClick={handleLogout} className={styles.navLink} >

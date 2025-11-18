@@ -113,22 +113,31 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
-    # Para usar aceleração por GPU Intel (Iris Xe), descomente as linhas abaixo:
-    #   - /dev/dri:/dev/dri                     # Acesso à GPU Intel
+   
+    # -------------------------------
+    # GPU INTEL (Iris Xe) — DESABILITADO PARA COMMIT
+    # Descomente se estiver usando Intel Graphics + OpenVINO.
     # devices:
     #   - /dev/dri:/dev/dri
+    #
     # environment:
-    #   # --- PERFORMANCE ---
-    #   OLLAMA_INTEL_GPU: "1"                  # Usa a GPU Iris Xe via OpenVINO
-    #   OLLAMA_FLASH_ATTENTION: "1"            # Acelera no CPU quando possível
-    #   OLLAMA_NUM_PARALLEL: "2"               # Execução paralela (2 tarefas)
-    #   OLLAMA_MAX_LOADED_MODELS: "2"          # Mantém 2 modelos carregados
-    #   OLLAMA_KV_CACHE_TYPE: "q8_0"           # Cache rápido (bom pra CPU Intel)
-    #   OLLAMA_CONTEXT_LENGTH: "2048"          # Já adequado
-    #   # --- LOGS E DEBUG OPCIONAL ---
+    #   OLLAMA_INTEL_GPU: "1"            # Ativa GPU Intel via OpenVINO
+    #   OLLAMA_FLASH_ATTENTION: "1"      # Otimização para CPU Intel
+    #   OLLAMA_NUM_PARALLEL: "2"         # Execução paralela
+    #   OLLAMA_MAX_LOADED_MODELS: "2"    # Mantém 2 modelos em RAM
+    #   OLLAMA_KV_CACHE_TYPE: "q8_0"     # Cache otimizado p/ Intel
+    #   OLLAMA_CONTEXT_LENGTH: "2048"    # Contexto padrão
     #   OLLAMA_LOG_LEVEL: "info"
-    # group_add:
-    #   - video
+    # -------------------------------
+
+    # Configurações genéricas
+    environment:
+      OLLAMA_LOG_LEVEL: "info"
+      OLLAMA_CONTEXT_LENGTH: "2048"
+      OLLAMA_MAX_LOADED_MODELS: "2"
+      OLLAMA_NUM_PARALLEL: "2"
+    group_add:
+      - video
     networks:
       - agronet
     restart: unless-stopped
