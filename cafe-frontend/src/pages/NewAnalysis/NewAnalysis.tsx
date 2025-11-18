@@ -111,6 +111,11 @@ const NewAnalysis: React.FC = () => {
     }
   };
 
+  const displayCoffeeTypes: Record<string, string> = {
+    arabica: "Arábica",
+    robusta: "Robusta"
+  };
+
   const handleSaveAnalysis = async () => {
     if (!analysisResult) {
       showNotification('error', 'Realize uma análise antes de salvar.');
@@ -127,7 +132,7 @@ const NewAnalysis: React.FC = () => {
 
     try {
       const analysisToSave = {
-        tipo_cafe: formData.tipo_cafe,
+        tipo_cafe: displayCoffeeTypes[formData.tipo_cafe] || formData.tipo_cafe,
         data_colheita: formData.data_colheita,
         quantidade: parseFloat(formData.quantidade),
         cidade: formData.cidade,
@@ -245,8 +250,8 @@ const NewAnalysis: React.FC = () => {
                       required
                     >
                       <option value="">Selecione o tipo de café</option>
-                      <option value="Arábica">Arábica</option>
-                      <option value="Robusta">Robusta</option>
+                      <option value="arabica">Arábica</option>
+                      <option value="robusta">Robusta</option>
                     </select>
                   </label>
 

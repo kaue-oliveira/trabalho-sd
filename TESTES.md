@@ -95,7 +95,7 @@ curl -X POST http://localhost:3000/auth/login \
   -d '{"email":"ana.cafeicultora@email.com","password":"CafeAna123"}'
 
 # Exportar token para usar nas próximas chamadas
-export TOKEN="eyJhbGciOiJIUzI1Ni..."
+export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwiZW1haWwiOiJhbmEuY2FmZWljdWx0b3JhQGVtYWlsLmNvbSIsImV4cCI6MTc2MzUwNzU2Mn0.i0oaptuigcYkwAdmy1lsdXJlUxGsz1HjP_H3UjQ3PYw"
 ```
 
 ### **3.3 Listar usuários via Gateway**
@@ -162,14 +162,40 @@ curl -X DELETE http://localhost:3000/analises/1 \
 
 ---
 
-## 🌤️ 5️⃣ Testes Climate Agent
+## 🌤️ 5️⃣ Testes dos Agentes
+
+### **5.1 Agente Climático**
 
 ```bash
 curl -X GET "http://localhost:3000/climate/forecast?cidade=Lavras&estado=MG" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
+
+### **5.2 Agente de Preço**
+
+```bash
+curl -X GET "http://localhost:3000/price/robusta" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+
+### **5.3 Agente Agronômico**
+```bash
+curl -X POST http://localhost:3000/agro/recommend \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tipo_cafe": "arabica",
+    "data_colheita": "2025-11-11",
+    "quantidade": 150.5,
+    "cidade": "Santos",
+    "estado": "SP",
+    "estado_cafe": "verde"
+  }'
+```
 ---
+
 
 ## ✅ Dicas de Debug
 
