@@ -1,0 +1,41 @@
+[33m26c8e31[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/api-climatica[m[33m, [m[1;31morigin/feat/api-climatica[m[33m)[m Corrige filtragem de cidades para retornar somente resultados do Brasil e ajustes no serviço climático
+[33m3b3a662[m Merge pull request #26 from kaue-oliveira/feat/gateway
+[33maa68f25[m[33m ([m[1;31morigin/feat/gateway[m[33m)[m feat: primeira versão básica do gateway e integração no frontend
+[33m56aa51f[m docs: atualiza README do front
+[33m59b4e70[m Merge pull request #25 from kaue-oliveira/feat/frontend-auth-context
+[33m66a6ed5[m[33m ([m[1;31morigin/feat/frontend-auth-context[m[33m)[m feat: implementar validações e melhorar UX
+[33m4d94878[m Update Coffee Price Agent description in README
+[33mf10615f[m Merge pull request #24 from kaue-oliveira/feat/api-climatica
+[33m8d08f96[m Merge branch 'main' into feat/api-climatica Merge da branch atual com main
+[33m15a14c2[m[33m ([m[1;32mmain[m[33m)[m Delete .vscode directory
+[33mf693ed3[m feat: historico de 3 meses do clima
+[33mab40bd7[m feat: adicionando versao inicial do context
+[33ma716d0f[m Merge pull request #23 from kaue-oliveira/feat/infra/postgres-setup
+[33m3d92b08[m[33m ([m[1;31morigin/feat/infra/postgres-setup[m[33m)[m feat: configuração do ambiente Docker com Postgres
+[33mec2b2e5[m feat: incluindo historico de 3 meses
+[33m6300f30[m feat: permitir busca de coordenadas para qualquer cidade via API do Open-Meteo
+[33m1949fa1[m Delete DiagramasSD-Fluxograma.drawio.png
+[33mb3ffe84[m Delete cafe-agents directory
+[33m595c51e[m Merge pull request #22 from kaue-oliveira/feat/api-climatica
+[33m94ac6c9[m Fix Markdown formatting in README
+[33m0d0859f[m feat: implementa agente climático para cafeicultura
+[33m1e4ef59[m Merge branch 'frontend-design' into main
+[33m80d0d42[m[33m ([m[1;31morigin/feat/frontend[m[33m)[m feat: adiciona página de perfil
+[33m742df33[m feat: adiciona página de histórico de análises
+[33me6a0eaf[m feat: adiciona a página de nova análise
+[33mb4a31f5[m style: substitui navbar antiga por nova sidebar padronizada
+[33m30cc828[m remover link duplicado
+[33m5a58b78[m feat: adiciona painel de controle
+[33m443383c[m feat: adiciona páginas de autenticação e pequena correção na PublicHome
+[33m911c931[m feat: adiciona primeira versao da homepage pública
+[33m3d2d4ec[m docs: refatora README para se adequar a nova arquitetura
+[33mdabfda6[m adiciona frontend React + TypeScript com Vite e Yarn
+[33mc0f5a93[m docs: atualiza diagrama de arquitetura
+[33mc6ec271[m feat: adiciona configuração inicial do Spring Boot
+[33m9859413[m Remove failure isolation point from README
+[33m76e61e3[m Enhance README with architecture and agent details
+[33m25665e1[m Revise architecture details and agent functionalities
+[33m4ddbab7[m Update README with flowchart and architecture diagrams
+[33m322d44f[m diagramas: fluxograma e arquitetura
+[33m07ac7da[m Revise README with project details and structure
+[33m6e7d7c5[m Initial commit
