@@ -14,7 +14,6 @@ app = FastAPI(
 # Incluir rotas
 app.include_router(usuarios.router)
 app.include_router(analises.router)
-app.include_router(precos.router)
 @app.get("/")
 def root():
     return {"message": "Cafe Data Service - API REST"}
