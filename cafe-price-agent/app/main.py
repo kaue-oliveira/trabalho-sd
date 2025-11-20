@@ -17,3 +17,7 @@ def read_root():
         dict: Mensagem de status do serviço
     """
     return {"message": "Cafe Price Agent está rodando"}
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}

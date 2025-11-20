@@ -111,6 +111,7 @@ async def health_check():
 async def full_health_check(
     client: httpx.AsyncClient = Depends(get_climate_agent_client),
     data_client: httpx.AsyncClient = Depends(get_data_service_client),
+    price_client: httpx.AsyncClient = Depends(get_price_agent_client),
     agro_client: httpx.AsyncClient = Depends(get_agro_agent_client),
     rag_client: httpx.AsyncClient = Depends(get_rag_service_client),
     ollama_client: httpx.AsyncClient = Depends(get_ollama_client)
