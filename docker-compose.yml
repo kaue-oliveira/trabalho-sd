@@ -111,8 +111,11 @@ services:
     container_name: ollama
     ports:
       - "11434:11434"
+    networks:
+      - agronet
     volumes:
       - ollama_data:/root/.ollama
+      
   
   frontend:
     build:

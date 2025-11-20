@@ -95,7 +95,7 @@ curl -X POST http://localhost:3000/auth/login \
   -d '{"email":"ana.cafeicultora@email.com","password":"CafeAna123"}'
 
 # Exportar token para usar nas próximas chamadas
-export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwiZW1haWwiOiJhbmEuY2FmZWljdWx0b3JhQGVtYWlsLmNvbSIsImV4cCI6MTc2MzUwNzU2Mn0.i0oaptuigcYkwAdmy1lsdXJlUxGsz1HjP_H3UjQ3PYw"
+export TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwiZW1haWwiOiJhbmEuY2FmZWljdWx0b3JhQGVtYWlsLmNvbSIsImV4cCI6MTc2MzY4Mjk0OX0.VlI28O-KwvCw-GChM87FkLmAk9lufC1gOFBjNC2vBKg"
 ```
 
 ### **3.3 Listar usuários via Gateway**
