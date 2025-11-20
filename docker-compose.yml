@@ -113,13 +113,27 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
+  
+  frontend:
+    build:
+      context: ./cafe-frontend
+      dockerfile: Dockerfile
+    container_name: cafe-frontend
+    ports:
+      - "5173:5173"
+    networks:
+      - agronet
+    depends_on:
+      - gateway
+    restart: unless-stopped
+
    
     # -------------------------------
     # GPU INTEL (Iris Xe) — DESABILITADO PARA COMMIT
     # Descomente se estiver usando Intel Graphics + OpenVINO.
     # devices:
     #   - /dev/dri:/dev/dri
-    #
+    
     # environment:
     #   OLLAMA_INTEL_GPU: "1"            # Ativa GPU Intel via OpenVINO
     #   OLLAMA_FLASH_ATTENTION: "1"      # Otimização para CPU Intel
