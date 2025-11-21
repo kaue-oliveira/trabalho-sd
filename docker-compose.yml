@@ -106,17 +106,7 @@ services:
       - agronet
     restart: unless-stopped
 
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    ports:
-      - "11434:11434"
-    networks:
-      - agronet
-    volumes:
-      - ollama_data:/root/.ollama
-      
-  
+
   frontend:
     build:
       context: ./cafe-frontend
@@ -130,6 +120,14 @@ services:
       - gateway
     restart: unless-stopped
 
+  
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama      
    
     # -------------------------------
     # GPU INTEL (Iris Xe) — DESABILITADO PARA COMMIT
@@ -153,6 +151,7 @@ services:
       OLLAMA_CONTEXT_LENGTH: "2048"
       OLLAMA_MAX_LOADED_MODELS: "2"
       OLLAMA_NUM_PARALLEL: "2"
+
     group_add:
       - video
     networks:
