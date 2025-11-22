@@ -15,6 +15,11 @@ router = APIRouter(tags=["health"])
 
 @router.get("/")
 async def root():
+    """
+    Endpoint raiz do Gateway.
+    
+    Retorna status básico confirmando que o serviço está rodando.
+    """
     return {
         "message": "CafeQuality Gateway está rodando!",
         "service": "gateway"
@@ -23,8 +28,12 @@ async def root():
 
 @router.get("/health")
 async def health_check():
-    """Health check do gateway."""
-
+    """
+    Health check básico do gateway.
+    
+    Verifica apenas o status do próprio serviço Gateway.
+    Retorna status e timestamp atual.
+    """
     return {
         "status": "healthy",
         "service": "gateway",
@@ -41,7 +50,19 @@ async def full_health_check(
     rag_client: httpx.AsyncClient = Depends(get_rag_service_client),
     ollama_client: httpx.AsyncClient = Depends(get_ollama_client)
 ):
-    """Health check completo verificando todos os serviços."""
+    """
+    Health check completo verificando todos os serviços dependentes.
+    
+    Verifica a conectividade com:
+    - Data Service
+    - Climate Agent
+    - Price Agent  
+    - Agro Agent
+    - RAG Service
+    - Ollama
+    
+    Retorna status detalhado de cada serviço.
+    """
 
     def check(response):
         return "healthy" if response == 200 else "unhealthy"

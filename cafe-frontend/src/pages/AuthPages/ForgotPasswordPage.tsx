@@ -1,3 +1,12 @@
+/**
+ * Página de recuperação de senha
+ * 
+ * Solicita envio de email para redefinir senha
+ * 
+ * Integrações: API /auth/forgot-password (POST)
+ * Validações: email
+ */
+
 import Form from '../../Components/Form/Form';
 import type { FormField } from '../../Components/Form/Form';
 import Modal from '../../Components/Modal/Modal';

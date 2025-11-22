@@ -1,3 +1,12 @@
+/**
+ * Página de redefinição de senha
+ * 
+ * Altera senha usando token de recuperação
+ * 
+ * Integrações: API /auth/reset-password (POST)
+ * Validações: token, nova senha, confirmação
+ */
+
 import Form from '../../Components/Form/Form';
 import type { FormField } from '../../Components/Form/Form';
 import Modal from '../../Components/Modal/Modal';

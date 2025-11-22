@@ -1,8 +1,13 @@
 import os
 from dotenv import load_dotenv
 
+
+# =====================================================
+# CONFIGURAÇÕES DO SISTEMA
+# =====================================================
 load_dotenv()
 
+# Configurações do Gateway
 GATEWAY_HOST = os.getenv("GATEWAY_HOST", "0.0.0.0")
 GATEWAY_PORT = int(os.getenv("GATEWAY_PORT", "3000"))
 

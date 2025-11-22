@@ -13,8 +13,13 @@ router = APIRouter(prefix="/rag", tags=["rag"])
 @router.post("/search")
 async def rag_search_proxy(request: dict, rag_client: httpx.AsyncClient = Depends(get_rag_service_client)):
     """
-    Proxy para o RAG service - busca semântica em documentos
-    Sem autenticação pois é usado internamente pelos agentes
+    Busca semântica em documentos técnicos sobre cafeicultura.)
+    
+    Retorna trechos relevantes de documentos técnicos, manuais
+    e artigos científicos sobre cultivo, colheita e processamento
+    de café.
+    
+    Uso interno pelos agentes especializados.
     """
     try:
         response = await rag_client.post("/rag/search", json=request)

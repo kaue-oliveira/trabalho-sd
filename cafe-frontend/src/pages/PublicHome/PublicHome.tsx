@@ -1,3 +1,12 @@
+/**
+ * Página pública inicial
+ * 
+ * Landing page com features e call-to-action
+ * 
+ * Navegação: login, cadastro
+ * Conteúdo: hero section, features, footer
+ */
+
 import React from 'react';
 import styles from './PublicHome.module.css';
 import { Link, useNavigate } from 'react-router-dom';

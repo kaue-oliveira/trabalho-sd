@@ -1,3 +1,10 @@
+/**
+ * Sistema de validações para formulários
+ * 
+ * Validações reutilizáveis para usuários, análises e autenticação
+ * Inclui limites de campos e validações específicas por formulário
+ */
+
 export interface ValidationResult {
   isValid: boolean;
   message?: string;
