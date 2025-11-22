@@ -1,3 +1,11 @@
+/**
+ * Interfaces TypeScript para autenticação
+ * 
+ * Define tipos de usuário, dados de login e respostas da API
+ * 
+ * Estruturas: Usuario, LoginData, AuthResponse
+ */
+
 export interface Usuario {
   id: number;
   nome: string;
@@ -15,13 +23,3 @@ export interface AuthResponse {
   user?: Usuario;
   error?: string;
 }
-
-// =====================================================
-// **ADICIONAR AQUI QUANDO GATEWAY ESTIVER PRONTO**
-// =====================================================
-// export interface TokenResponse {
-//   access_token: string;
-//   token_type: string;
-//   user: Usuario;
-// }
-// =====================================================

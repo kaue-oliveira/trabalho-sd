@@ -1,3 +1,14 @@
+/**
+ * Página de perfil do usuário
+ * 
+ * Gerencia dados pessoais, alteração de senha e exclusão de conta
+ * 
+ * Integrações:
+ * - AuthContext (usuário e token)
+ * - API /usuarios/me (PUT, DELETE)
+ * - Sistema de notificações
+ */
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../Components/Sidebar/Sidebar';

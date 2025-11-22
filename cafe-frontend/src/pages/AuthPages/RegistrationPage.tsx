@@ -1,3 +1,13 @@
+/**
+ * Página de cadastro de novo usuário
+ * 
+ * Cria conta de produtor/cooperativa no sistema
+ * 
+ * Integrações: API /usuarios (POST)
+ * Validações: nome, email, senha, confirmação
+ */
+
+
 import Form from '../../Components/Form/Form';
 import type { FormField } from '../../Components/Form/Form';
 import Modal from '../../Components/Modal/Modal';

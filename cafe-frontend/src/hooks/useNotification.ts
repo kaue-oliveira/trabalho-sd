@@ -1,3 +1,11 @@
+/**
+ * Hook para gerenciar notificações
+ * 
+ * Controla estado de notificações (aberto/fechado, tipo, mensagem)
+ * 
+ * Retorna: estado da notificação + funções show/close
+ */
+
 import { useState } from 'react';
 
 export const useNotification = () => {

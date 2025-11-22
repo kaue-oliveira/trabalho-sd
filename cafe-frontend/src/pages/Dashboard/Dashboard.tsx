@@ -1,3 +1,13 @@
+/**
+ * Página principal do dashboard
+ * 
+ * Visão geral com estatísticas e análises recentes
+ * 
+ * Dados: AuthContext (usuário, análises)
+ * Estatísticas: contagem por decisão, total
+ * Navegação: nova análise, histórico
+ */
+
 import styles from './Dashboard.module.css';
 import { Link, useNavigate } from 'react-router-dom';
 import Sidebar from '../../Components/Sidebar/Sidebar';

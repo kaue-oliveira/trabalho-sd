@@ -1,3 +1,13 @@
+/**
+ * Página de histórico de análises
+ * 
+ * Lista filtrada e paginada das análises
+ * 
+ * Filtros: data, tipo de café, decisão
+ * Paginação: 3 itens por página
+ * Ordenação: mais recentes primeiro
+ */
+
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../Components/Sidebar/Sidebar';
