@@ -83,19 +83,24 @@ async def solicitar_decisao_ollama_async(payload: dict):
     clima = payload.get("clima", {})
     preco = payload.get("preco", {})
     relatorios = payload.get("relatorios", [])
+    tipo_cafe = payload.get("tipo_cafe", "")
+    estado_cafe = payload.get("estado_cafe", "")
+    data_colheita = payload.get("data_colheita", "")
+    quantidade = payload.get("quantidade", 0)
+
     
     # Análise quantitativa usando funções do agente agronômico
-    climate_score = analyze_climate_factors(clima)
-    price_score = analyze_price_trends(preco)
-    market_score = analyze_market_reports(relatorios)
+    climate_score = analyze_climate_factors(clima, tipo_cafe, estado_cafe, data_colheita)
+    price_score = analyze_price_trends(preco, quantidade, estado_cafe)
+    market_score = analyze_market_reports(relatorios, estado_cafe, tipo_cafe)
     
     # Calcula score final e toma a decisão final
     decision_score = calculate_decision_score(climate_score, price_score, market_score)
-    decision_final = "vender" if decision_score >= 0.6 else "aguardar"
+    decision_final = "vender" if decision_score >= 0.5 else "aguardar"
     
     # Log das análises
     print(f"[ANÁLISE] Climate Score: {climate_score:.3f}, Price Score: {price_score:.3f}, Market Score: {market_score:.3f}")
-    print(f"[DECISÃO] Score: {decision_score:.3f} -> {decision_final.upper()} (limiar: 0.6)")
+    print(f"[DECISÃO] Score: {decision_score:.3f} -> {decision_final.upper()} (limiar: 0.5)")
     
     # Constrói prompt usando a função do agente agronômico
     prompt = build_ai_prompt(

@@ -24,8 +24,8 @@ O agente agronômico utiliza uma abordagem híbrida:
    - `calculate_decision_score()`: Combina scores com pesos (clima 35%, preço 40%, mercado 25%)
 
 2. **Decisão FINAL do Agente**
-   - Score ≥ 0.6 → **VENDER**
-   - Score < 0.6 → **AGUARDAR**
+   - Score ≥ 0.5 → **VENDER**
+   - Score < 0.5 → **AGUARDAR**
 
 3. **Geração de Explicação** (via Ollama)
    - Recebe decisão já tomada pelo agente

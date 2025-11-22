@@ -6,19 +6,23 @@ de mercado, construção de prompts para o modelo de IA e tomada de decisão fin
 """
 
 from typing import Dict, Any
+from datetime import datetime
 
 
-def analyze_climate_factors(clima: dict) -> float:
+def analyze_climate_factors(clima: dict, tipo_cafe: str, estado_cafe: str = "", data_colheita: str = "") -> float:
     """
-    Analisa fatores climáticos e retorna um score (0.0 = aguardar, 1.0 = vender)
+    Analisa fatores climáticos e retorna um score
     
     Args:
         clima: Dicionário com dados climáticos do Open-Meteo contendo:
                - daily_forecast: previsão dos próximos 14 dias
                - past_month_averages: médias históricas
+        tipo_cafe: arabica ou robusta
+        estado_cafe: verde, torrado ou moido
+        data_colheita: Data da colheita (YYYY-MM-DD)
         
     Returns:
-        Score entre 0.0 e 1.0 indicando favorabilidade para venda
+        Score indicando favorabilidade para venda
     """
     score = 0.5  # Score neutro
     
@@ -29,24 +33,41 @@ def analyze_climate_factors(clima: dict) -> float:
     if not forecast:
         return score
     
-    # Analisa próximos 7 dias (período crítico para decisão)
-    next_7_days = forecast[:7]
+    # Analisa próximos 14 dias (período crítico para decisão)
+    next_days = forecast[:14]
     
-    # Calcula médias dos próximos 7 dias
-    avg_temp_max = sum(day.get("temperature_2m_max", 20) for day in next_7_days) / len(next_7_days)
-    avg_temp_min = sum(day.get("temperature_2m_min", 15) for day in next_7_days) / len(next_7_days)
-    total_precipitation = sum(day.get("precipitation_sum", 0) for day in next_7_days)
-    total_precip_hours = sum(day.get("precipitation_hours", 0) for day in next_7_days)
-    avg_windspeed = sum(day.get("windspeed_10m_max", 10) for day in next_7_days) / len(next_7_days)
+    # Calcula médias dos próximos 14 dias
+    avg_temp_max = sum(day.get("temperature_2m_max", 20) for day in next_days) / len(next_days)
+    avg_temp_min = sum(day.get("temperature_2m_min", 15) for day in next_days) / len(next_days)
+    total_precipitation = sum(day.get("precipitation_sum", 0) for day in next_days)
+    total_precip_hours = sum(day.get("precipitation_hours", 0) for day in next_days)
+    avg_windspeed = sum(day.get("windspeed_10m_max", 10) for day in next_days) / len(next_days)
     
     # 1. Análise de temperatura (peso maior)
     # Temperatura ideal para armazenamento/transporte: 18-28°C
-    if 18 <= avg_temp_max <= 28 and avg_temp_min >= 12:
-        score += 0.25  # Condições ótimas
-    elif avg_temp_max > 32 or avg_temp_min < 10:
-        score -= 0.30  # Condições ruins (risco de deterioração)
-    elif avg_temp_max > 30:
-        score -= 0.15  # Calor excessivo
+    tipo_cafe = tipo_cafe.lower()
+    if tipo_cafe == "arabica":
+        # Condições ótimas
+        if 18 <= avg_temp_max <= 22 and avg_temp_min >= 13:
+            score += 0.25  
+        # Condições muito ruins
+        elif avg_temp_max > 32 or avg_temp_min < 13:
+            score -= 0.30  
+        # Temperaturas fora do ideal, mas não críticas
+        else:
+            score -= 0.15  
+
+    elif tipo_cafe == "robusta":
+        # Condições ótimas
+        if 22 <= avg_temp_max <= 28 and avg_temp_min >= 15:
+            score += 0.25  
+        # Condições muito ruins
+        elif avg_temp_max > 35 or avg_temp_min < 15:
+            score -= 0.30  
+        # Temperaturas fora do ideal
+        else:
+            score -= 0.15  
+
     
     # 2. Análise de precipitação (muito importante para logística)
     # Chuva dificulta transporte e pode afetar qualidade
@@ -60,7 +81,7 @@ def analyze_climate_factors(clima: dict) -> float:
         score -= 0.20
     
     # 3. Análise de horas de chuva (complementar)
-    if total_precip_hours > 48:  # Mais de 48h de chuva em 7 dias
+    if total_precip_hours > 48:  # Mais de 48h de chuva em 14 dias
         score -= 0.15  # Período chuvoso prolongado
     elif total_precip_hours == 0:
         score += 0.10  # Período seco ideal
@@ -71,21 +92,55 @@ def analyze_climate_factors(clima: dict) -> float:
     elif 10 <= avg_windspeed <= 18:
         score += 0.05  # Bom para secagem natural
     
+    # 5. Análise do estado do café (impacta sensibilidade ao clima)
+    if estado_cafe:
+        estado_lower = estado_cafe.lower()
+        if "verde" in estado_lower:
+            # Café verde é mais sensível à umidade durante transporte
+            if total_precipitation > 30:
+                score -= 0.20  # Chuva prejudica muito café verde
+            elif total_precipitation < 10:
+                score += 0.15  # Clima seco ideal
+        elif "torrado" in estado_lower or "moido" in estado_lower:
+            # Café processado precisa proteção absoluta contra umidade
+            if total_precipitation > 20:
+                score -= 0.30  # Crítico: umidade degrada café torrado/moído rapidamente
+            elif total_precipitation < 5:
+                score += 0.20  # Excelente para transporte de processado
+    
+    # 6. Tempo desde a colheita (urgência aumenta com tempo)
+    if data_colheita:
+        try:
+            
+            data_colheita_dt = datetime.strptime(data_colheita, "%Y-%m-%d")
+            dias_desde_colheita = (datetime.now() - data_colheita_dt).days
+            
+            if dias_desde_colheita > 180:  # Mais de 6 meses
+                score += 0.15  # Urgência: vender logo
+            elif dias_desde_colheita > 120:  # 4-6 meses
+                score += 0.10
+            elif dias_desde_colheita < 30:  # Menos de 1 mês
+                score -= 0.05  # Pode aguardar melhor momento
+        except:
+            pass
+    
     return max(0.0, min(1.0, score))
 
 
-def analyze_price_trends(preco: dict) -> float:
+def analyze_price_trends(preco: dict, quantidade: float = 0, estado_cafe: str = "") -> float:
     """
-    Analisa tendências de preço e retorna um score (0.0 = aguardar, 1.0 = vender)
+    Analisa tendências de preço e retorna um score
     
     Args:
         preco: Dicionário com dados do agente de preços contendo:
                - preco_atual: preço atual
                - medias_moveis_3_dias: histórico de médias móveis
                - dias_analisados: período de análise
+        quantidade: Quantidade de sacas (1-5000)
+        estado_cafe: verde, torrado ou moido
         
     Returns:
-        Score entre 0.0 e 1.0 indicando favorabilidade para venda
+        Score indicando favorabilidade para venda
     """
     score = 0.5
     
@@ -166,15 +221,46 @@ def analyze_price_trends(preco: dict) -> float:
         elif diff_1 < 0 and diff_2 < 0 and abs(diff_1) > abs(diff_2):  # Acelerando pra baixo
             score += 0.15  # Vender antes que caia mais
     
+    # 5. Análise da quantidade (volumes diferentes têm estratégias diferentes)
+    if quantidade > 0:
+        if quantidade >= 1000:  # Grande volume (1000-5000 sacas)
+            # Grande volume: aproveitar preço bom, difícil vender tudo em queda
+            if variacao_vs_media_5 > 0.03:
+                score += 0.15  # Preço bom + volume alto = vender
+            elif variacao_vs_media_5 < -0.03:
+                score -= 0.10  # Preço ruim + volume alto = difícil escoar
+        elif quantidade >= 500:  # Volume médio (500-999 sacas)
+            if variacao_vs_media_5 > 0:
+                score += 0.08  # Preço acima da média = bom momento
+        elif quantidade < 100:  # Volume pequeno (1-99 sacas)
+            # Pequeno volume = flexibilidade, pode aguardar melhor preço
+            if tendencia > 0.05:  # Se preços subindo
+                score -= 0.10  # Aguardar mais
+    
+    # 6. Estado do café afeta valor e urgência
+    if estado_cafe:
+        estado_lower = estado_cafe.lower()
+        if "torrado" in estado_lower or "moido" in estado_lower:
+            # Café processado: maior valor agregado mas prazo de validade menor
+            score += 0.15  # Urgência para vender antes de perder qualidade
+            if variacao_vs_media_3 > 0.05:  # Se preço está 5% acima
+                score += 0.10  # Momento excelente
+        elif "verde" in estado_lower:
+            # Café verde: mais estável, pode aguardar melhor momento
+            if tendencia > 0.08:  # Tendência forte de alta
+                score -= 0.08  # Pode esperar valorizar mais
+    
     return max(0.0, min(1.0, score))
 
 
-def analyze_market_reports(relatorios: list) -> float:
+def analyze_market_reports(relatorios: list, estado_cafe: str = "", tipo_cafe: str = "") -> float:
     """
     Analisa relatórios de mercado via RAG e retorna um score
     
     Args:
         relatorios: Lista de relatórios do RAG
+        estado_cafe: verde, torrado ou moido
+        tipo_cafe: arabica ou robusta
         
     Returns:
         Score entre 0.0 e 1.0 indicando favorabilidade para venda
@@ -201,6 +287,19 @@ def analyze_market_reports(relatorios: list) -> float:
         score += 0.3
     elif negative_count > positive_count:
         score -= 0.3
+    
+    # Análise específica por estado do café
+    if estado_cafe:
+        estado_lower = estado_cafe.lower()
+        if "torrado" in estado_lower or "moido" in estado_lower:
+                # Relatórios sobre café processado são relevantes
+                if positive_count > negative_count:
+                    score += 0.10
+        if "verde" in all_text or "cru" in all_text:
+            if "verde" in estado_lower:
+                # Relatórios sobre café verde/cru
+                if positive_count > negative_count:
+                    score += 0.10
     
     return max(0.0, min(1.0, score))
 
@@ -285,13 +384,13 @@ def build_ai_prompt(payload: dict, clima: dict, preco: dict, relatorios: list,
         - Score Climático: {climate_score:.3f} (peso 35%)
         - Score de Preços: {price_score:.3f} (peso 40%)  
         - Score de Mercado: {market_score:.3f} (peso 25%)
-        - **Score Final: {decision_score:.3f}** → Limiar: 0.6 para VENDER
+        - **Score Final: {decision_score:.3f}** → Limiar: 0.5 para VENDER
 
         ---
 
         ### DADOS QUE FUNDAMENTARAM A DECISÃO
 
-        **DADOS CLIMÁTICOS (próximos 7 dias):**
+        **DADOS CLIMÁTICOS (próximos 14 dias):**
         {clima}
 
         **DADOS DE PREÇOS:**
@@ -312,7 +411,7 @@ def build_ai_prompt(payload: dict, clima: dict, preco: dict, relatorios: list,
         Sua tarefa é explicar por que a decisão de **{decision.upper()}** é apropriada baseada nos dados acima.
 
         Considere na explicação:
-        1. Como as condições climáticas dos próximos 7 dias influenciam
+        1. Como as condições climáticas dos próximos 14 dias influenciam
         2. O que as tendências de preço indicam
         3. O estado atual do café e logística
         4. Insights relevantes dos relatórios técnicos
