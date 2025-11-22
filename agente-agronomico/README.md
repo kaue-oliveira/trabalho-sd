@@ -1,16 +1,35 @@
 # Agente Agrônomico
 
 ## O que é
-Serviço que analisa dados de café e recomenda se deve vender ou aguardar. Usa IA (phi3:mini) para tomar decisões baseadas em clima, preços e documentos técnicos.
+Serviço que analisa dados de café e **toma a decisão** de vender ou aguardar baseada em análise quantitativa. O modelo de IA (phi3:mini) é usado **apenas para gerar explicações**.
 
 ## Estrutura de Arquivos
 ```
 agente-agronomico/
-├── main.py          # API FastAPI
-├── utils.py         # Lógica de IA e HTTP
-├── models.py        # Modelos de dados
-└── Dockerfile       # Container
+├── main.py              # API FastAPI
+├── utils.py             # Comunicação com Gateway e Ollama
+├── agronomic_agent.py   # Lógica de análise e DECISÃO
+├── models.py            # Modelos de dados
+└── Dockerfile           # Container
 ```
+
+## Arquitetura de Decisão
+
+O agente agronômico utiliza uma abordagem híbrida:
+
+1. **Análise Quantitativa** (agronomic_agent.py)
+   - `analyze_climate_factors()`: Avalia próximos 7 dias (temperatura, precipitação, vento) → score 0-1
+   - `analyze_price_trends()`: Analisa médias móveis e tendências → score 0-1
+   - `analyze_market_reports()`: Processa relatórios RAG → score 0-1
+   - `calculate_decision_score()`: Combina scores com pesos (clima 35%, preço 40%, mercado 25%)
+
+2. **Decisão FINAL do Agente**
+   - Score ≥ 0.6 → **VENDER**
+   - Score < 0.6 → **AGUARDAR**
+
+3. **Geração de Explicação** (via Ollama)
+   - Recebe decisão já tomada pelo agente
+   - Gera explicação detalhada e técnica
 
 ## Como Usar
 
@@ -63,20 +82,36 @@ sudo docker logs agro-agent --tail 10
 ```
 
 ## Como Funciona
-1. Recebe dados: localidade, tipo de grão, data de colheita
-2. Busca clima via Gateway
-3. Busca preços via Gateway  
-4. Consulta PDFs técnicos via RAG Service
-5. Envia tudo para IA (phi3:mini via Ollama)
-6. Retorna decisão: `vender` ou `aguardar` + explicação
+1. **Recebe requisição**: tipo de café, localidade, data de colheita, estado do café
+2. **Busca paralela** (via Gateway):
+   - Clima: previsão próximos 14 dias (Open-Meteo)
+   - Preços: médias móveis e tendências
+   - Relatórios técnicos (RAG)
+3. **Análise quantitativa e DECISÃO** (agronomic_agent.py):
+   - Calcula scores individuais (clima, preço, mercado)
+   - Combina scores com pesos definidos
+4. **Constrói prompt com decisão final**:
+   - Decisão já tomada pelo agente
+   - Dados numéricos estruturados
+   - Scores calculados
+   - Relatórios como contexto
+5. **Consulta Ollama** (phi3:mini):
+   - Recebe decisão
+   - Gera explicação técnica e detalhada
+6. **Retorna resposta**: decisão do agente + explicação do Ollama
 
 ## Resposta Esperada
 ```json
 {
-  "decisao": "aguardar",
-  "explicacao_decisao": "Com base no clima e preços..."
+  "decisao": "vender",
+  "explicacao_decisao": "A decisão de VENDER foi tomada com base no score quantitativo de 0.725. As condições climáticas dos próximos 7 dias são favoráveis com temperaturas entre 24-27°C e precipitação total de apenas 3mm, facilitando logística. O preço atual de R$1389,49 está 2.1% acima da média dos últimos 30 dias, e a tendência recente mostra queda de 4.2% nos últimos períodos, indicando momento oportuno antes de possível desvalorização adicional. Scores: clima 0.80, preço 0.72, mercado 0.65."
 }
 ```
+
+## Pesos da Decisão
+- **Clima**: 35% - Próximos 7 dias (temperatura, precipitação, vento)
+- **Preço**: 40% - Preço atual vs médias, tendências, volatilidade, momentum
+- **Mercado**: 25% - Relatórios técnicos e análises RAG
 
 ## Dependências
 - Gateway rodando (porta 3000)

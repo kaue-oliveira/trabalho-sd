@@ -3,6 +3,13 @@ import os
 import asyncio
 import time
 import json
+from agronomic_agent import (
+    analyze_climate_factors,
+    analyze_price_trends, 
+    analyze_market_reports,
+    calculate_decision_score,
+    build_ai_prompt
+)
 
 client = httpx.AsyncClient(timeout=None)
 
@@ -61,126 +68,41 @@ async def rag_search_async(query: str, k: int = 4):
 
 # --------- OLLAMA ---------
 
-def resumir_preco(preco):
-    # extrai listas
-    medias = [m["media"] for m in preco["medias_moveis_3_dias"]]
-    
-    # cálculos
-    media_geral = sum(medias) / len(medias)
-    minimo = min(medias)
-    maximo = max(medias)
-    
-    preco_atual = preco["preco_atual"]
-    variacao = ((preco_atual - minimo) / minimo) * 100
-
-    preco_resumido = (
-        f"Preço atual: {preco_atual:.2f}.\n"
-        f"Média das últimas {len(medias)} médias móveis: {media_geral:.2f}.\n"
-        f"Variação percentual dos últimos 90 dias: {variacao:.2f}%.\n"
-    )
-
-    return preco_resumido
-
-
-def resumir_clima(clima):
-    forecast = clima["daily_forecast"]
-
-    # últimos 7 dias (ou tudo se quiser full range: forecast)
-    ultimos_7 = forecast[-7:]
-
-    dias_secos = sum(1 for d in ultimos_7 if d["precipitation_sum"] == 0)
-    chuva_alta = any(d["precipitation_sum"] > 5 for d in forecast)
-    
-    # risco de mofo: chuva alta + muitas horas + mínimas elevadas
-    risco_mofo = any(
-        (d["precipitation_sum"] > 5 and 
-         d["precipitation_hours"] >= 8 and 
-         d["temperature_2m_min"] >= 18)
-        for d in forecast
-    )
-
-    clima_resumido = (
-        "Resumo climático:\n"
-        f"- Dias secos na semana: {dias_secos}\n"
-        f"- Precipitação alta prevista? {'Sim' if chuva_alta else 'Não'}\n"
-        f"- Risco de mofo: {'Sim' if risco_mofo else 'Não'}\n"
-    )
-
-    return clima_resumido
-
-
 async def solicitar_decisao_ollama_async(payload: dict):   
+    """
+    Solicita explicação ao modelo Ollama para a decisão tomada pelo agente
+    
+    Este método:
+    1. Analisa os dados usando as funções do agente agronômico
+    2. Calcula scores para clima, preço e mercado
+    3. Toma a decisão final
+    4. Constrói prompt pedindo explicação
+    5. Envia ao Ollama para gerar explicação detalhada
+    
+    """
     clima = payload.get("clima", {})
     preco = payload.get("preco", {})
     relatorios = payload.get("relatorios", [])
     
-    tipo_cafe = payload.get("tipo_cafe", "")
-    cidade = payload.get("cidade", "")
-    estado = payload.get("estado", "")
-    data_colheita = payload.get("data_colheita", "")
-    quantidade = payload.get("quantidade", 0)
-    estado_cafe = payload.get("estado_cafe", "")
-
-    preco_resumido = resumir_preco(preco)
-    clima_resumido = resumir_clima(clima)
-    prompt = f"""
-Você é um especialista em cafeicultura e comercialização de café.
-
-Sua análise deve seguir OBRIGATORIAMENTE esta ordem:
-
-1. Interpretar os dados numéricos de preço.
-2. Interpretar os dados numéricos do clima.
-3. Considerar a condição do café armazenado.
-4. Usar relatórios técnicos APENAS como complemento.
-5. Tomar a decisão final com base MAJORITÁRIA nos dados recentes enviados (preço e clima).
-
-Nunca use análises históricas irrelevantes dos PDFs se os dados numéricos atuais já forem suficientes.
-
----
-
-### DADOS ESTRUTURADOS PARA ANÁLISE (PRINCIPAIS)
-**PREÇO:**
-{preco_resumido}
-
-**CLIMA:**
-{clima_resumido}
-
----
-
-### INFORMAÇÕES COMPLEMENTARES (USO SECUNDÁRIO)
-- Tipo de café: {tipo_cafe}
-- Cidade: {cidade}, {estado}
-- Data de colheita: {data_colheita}
-- Quantidade: {quantidade}
-- Estado do café: {estado_cafe}
-
----
-
-### RELATÓRIOS TÉCNICOS (USO APENAS SE NECESSÁRIO)
-{relatorios}
-
----
-
-Agora siga estas regras lógicas obrigatórias:
-
-- Se o preço atual está acima das médias → favorece VENDER.
-- Se o clima é arriscado para armazenamento (chuva, umidade) → favorece VENDER.
-- Se o preço está subindo fortemente → favorece AGUARDAR.
-- Se os preços estão caindo → favorece VENDER.
-- Se não houver tendência clara → dê peso MAIOR ao preço atual.
-- Se PDFs contradirem os dados numéricos, IGNORE os PDFs.
-
----
-
-Responda APENAS este JSON:
-
-{{
-  "decisao": "vender" ou "aguardar",
-  "explicacao": "máximo 200 palavras, citando explicitamente preços e clima"
-}}
-"""
-
-
+    # Análise quantitativa usando funções do agente agronômico
+    climate_score = analyze_climate_factors(clima)
+    price_score = analyze_price_trends(preco)
+    market_score = analyze_market_reports(relatorios)
+    
+    # Calcula score final e toma a decisão final
+    decision_score = calculate_decision_score(climate_score, price_score, market_score)
+    decision_final = "vender" if decision_score >= 0.6 else "aguardar"
+    
+    # Log das análises
+    print(f"[ANÁLISE] Climate Score: {climate_score:.3f}, Price Score: {price_score:.3f}, Market Score: {market_score:.3f}")
+    print(f"[DECISÃO] Score: {decision_score:.3f} -> {decision_final.upper()} (limiar: 0.6)")
+    
+    # Constrói prompt usando a função do agente agronômico
+    prompt = build_ai_prompt(
+        payload, clima, preco, relatorios,
+        climate_score, price_score, market_score,
+        decision_score, decision_final
+    )
 
     try:
         start = time.perf_counter()
@@ -188,6 +110,7 @@ Responda APENAS este JSON:
         # Log dos dados climáticos que estão sendo enviados ao Ollama
         print(f"[CLIMA] Dados climáticos enviados ao Ollama: {clima}")
         print(f"[PREÇO] Dados de preço enviados ao Ollama: {preco}")
+        print(f"[OLLAMA] Solicitando explicação para decisão: {decision_final.upper()}")
         
         r = await client.post(
             f"{GATEWAY_URL}/ollama/generate",
@@ -202,20 +125,30 @@ Responda APENAS este JSON:
         r.raise_for_status()
 
         raw = r.json().get("response", "")
-        decision_data = json.loads(raw)
-
+        ollama_response = json.loads(raw)
+        explicacao = ollama_response.get("explicacao", "")
+        
         return {
-            "decisao": decision_data.get("decisao", "aguardar").lower(),
-            "explicacao": decision_data.get("explicacao", ""),
-            "ollama_time_seconds": round(duration, 3)
+            "decisao": decision_final,  # SEMPRE a decisão do agente
+            "explicacao": explicacao if explicacao else f"Decisão de {decision_final} baseada em análise quantitativa (score: {decision_score:.3f})",
+            "ollama_time_seconds": round(duration, 3),
+            "decision_score": decision_score,
+            "climate_score": climate_score,
+            "price_score": price_score,
+            "market_score": market_score
         }
 
     except Exception as e:
         print(f"[ERROR] Erro ao consultar Ollama: {e}")
+        # Mesmo com erro, retorna a decisão do agente com explicação padrão
         return {
-            "decisao": "aguardar",
-            "explicacao": f"Erro ao consultar modelo: {e}",
-            "ollama_time_seconds": None
+            "decisao": decision_final,  # SEMPRE a decisão do agente
+            "explicacao": f"Decisão de {decision_final} baseada em análise quantitativa. Score final: {decision_score:.3f} (clima: {climate_score:.3f}, preço: {price_score:.3f}, mercado: {market_score:.3f}). Limiar para venda: 0.5",
+            "ollama_time_seconds": None,
+            "decision_score": decision_score,
+            "climate_score": climate_score,
+            "price_score": price_score,
+            "market_score": market_score
         }
 
 # --------- BUSCA EM PARALELO ---------
