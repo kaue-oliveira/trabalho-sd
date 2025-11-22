@@ -23,50 +23,42 @@ def baixar_cepea(tipo_cafe):
     """
     url_base = "https://www.cepea.org.br"
     DIAS = 120
-    # Cria sessão HTTP para manter cookies e headers
+
     sessao = requests.Session()
-    # Define User-Agent para simular navegador
+
     sessao.headers.update({"User-Agent": "Mozilla/5.0"})
 
-    # Requisição inicial para obter cookies de sessão
     sessao.get(f"{url_base}/br/consultas-ao-banco-de-dados-do-site.aspx")
 
-    # Cálculo do período temporal
-    data_final = datetime.now()  # Data final é sempre atual
-    # Data inicial: ajusta para garantir dias úteis (considera fins de semana)
+    data_final = datetime.now()
+
     data_inicial = data_final - timedelta(days=int((DIAS / 5) * 7))
 
-    # Mapeamento dinâmico do tipo de café para ID da tabela no CEPEA
     tabela_id = "23" if tipo_cafe == "arabica" else "24"
     
-    # Parâmetros da requisição AJAX
     params = {
-        "tabela_id": tabela_id,  # ID da tabela no banco do CEPEA
-        "data_inicial": data_inicial.strftime("%d/%m/%Y"),  # Formato DD/MM/AAAA
+        "tabela_id": tabela_id,
+        "data_inicial": data_inicial.strftime("%d/%m/%Y"),
         "data_final": data_final.strftime("%d/%m/%Y"),
-        "periodicidade": "1"  # Periodicidade diária
+        "periodicidade": "1" 
     }
 
-    # Requisição AJAX para obter URL do arquivo
     resposta = sessao.get(
         f"{url_base}/br/consultas-ao-banco-de-dados-do-site.aspx",
         params=params,
-        headers={"X-Requested-With": "XMLHttpRequest"}  # Header para identificar AJAX
+        headers={"X-Requested-With": "XMLHttpRequest"}
     )
 
-    # Extrai URL do arquivo XLS da resposta JSON
     url_arquivo = resposta.json()["arquivo"]
 
-    # Download do conteúdo do arquivo XLS
     conteudo = sessao.get(url_arquivo).content
-    # Gera nome único do arquivo incluindo tipo de café
+
     nome_xls = f"cepea_temp_{tipo_cafe}.xls"
 
-    # Salva arquivo XLS localmente
     with open(nome_xls, "wb") as f:
         f.write(conteudo)
 
-    return nome_xls  # Retorna nome do arquivo salvo
+    return nome_xls
 
 def ler_xls_para_csv(nome_xls, nome_csv="cepea_dados.csv"):
     """
@@ -85,43 +77,36 @@ def ler_xls_para_csv(nome_xls, nome_csv="cepea_dados.csv"):
         3. Busca preços nas colunas adjacentes
         4. Remove duplicatas e salva CSV formatado
     """
-    # Leitura do arquivo XLS usando engine calamine (compatível com .xls antigo)
+
     df = pd.read_excel(nome_xls, engine="calamine")
-    dados = []  # Lista para armazenar tuplas (data, preço)
+    dados = []
 
-    # Iteração por todas as células da planilha
-    for i in range(len(df)):  # Itera linhas
-        for j in range(len(df.columns)):  # Itera colunas
-            valor = str(df.iloc[i, j]).strip()  # Obtém e limpa valor da célula
+    for i in range(len(df)):
+        for j in range(len(df.columns)):
+            valor = str(df.iloc[i, j]).strip()
 
-            # Identifica padrão de data (DD/MM/AAAA)
             if (len(valor) == 10 and valor[2] == "/" and valor[5] == "/" 
                 and valor.replace("/", "").isdigit()):
-                data = valor  # Armazena data encontrada
+                data = valor 
 
-                # Busca preço nas 3 colunas seguintes
                 for k in range(j + 1, min(j + 4, len(df.columns))):
-                    preco_str = str(df.iloc[i, k]).replace(" ", "")  # Remove espaços
+                    preco_str = str(df.iloc[i, k]).replace(" ", "") 
 
-                    # Verifica se string contém vírgula (formato brasileiro)
                     if "," in preco_str:
                         try:
-                            # Converte formato brasileiro para float
-                            # Ex: "1.250,50" → 1250.50
+             
                             preco = float(preco_str.replace(".", "").replace(",", "."))
-                            dados.append((data, preco))  # Adiciona tupla à lista
-                            break  # Para busca após encontrar primeiro preço válido
+                            dados.append((data, preco))
+                            break 
                         except:
-                            continue  # Continua se conversão falhar
+                            continue
 
-    # Remove duplicatas mantendo ordem (usando dict)
     dados = list(dict.fromkeys(dados))
 
-    # Escrita do arquivo CSV formatado
     with open(nome_csv, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["Data", "Preco_R$"])  # Cabeçalho
+        writer.writerow(["Data", "Preco_R$"])
         for linha in dados:
-            writer.writerow(linha)  # Escreve cada linha de dados
+            writer.writerow(linha)
 
-    return nome_csv  # Retorna nome do arquivo gerado
+    return nome_csv 
