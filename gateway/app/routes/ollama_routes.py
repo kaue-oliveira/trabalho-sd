@@ -14,6 +14,14 @@ router = APIRouter(prefix="/ollama", tags=["ollama"])
 
 @router.post("/generate")
 async def proxy_ollama_generate(request: Request, ollama_client: httpx.AsyncClient = Depends(get_ollama_client)):
+    """
+    Proxy para geração de texto usando modelos Ollama.
+    
+    Retorna resposta gerada pelo modelo com métricas de tempo
+    incluindo duração do proxy no gateway.
+    
+    Usado pelos agentes para processamento de linguagem natural.
+    """
     body = await request.json()
     try:
         start = time.perf_counter()
@@ -39,6 +47,13 @@ async def proxy_ollama_generate(request: Request, ollama_client: httpx.AsyncClie
 
 @router.post("/api/embeddings")
 async def proxy_ollama_embeddings(request: Request, ollama_client: httpx.AsyncClient = Depends(get_ollama_client)):
+    """
+    Proxy para geração de embeddings usando modelos Ollama.
+    
+    Retorna vetor de embeddings para o texto fornecido.
+    
+    Usado pelo RAG service para busca semântica e similaridade.
+    """
     body = await request.json()
 
     try:

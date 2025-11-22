@@ -12,14 +12,30 @@ from .routes import (
 
 app = FastAPI(
     title="AgroAnalytics Gateway",
-    description="API Gateway para o sistema AgroAnalytics",
-    version="1.1.0"
-)   
+    description=(
+        "API Gateway para o sistema AgroAnalytics - "
+        "Orquestra serviços especializados em cafeicultura\n\n"
+        "**Serviços integrados:**\n"
+        "- 🌱 Agro Agent: Recomendações agronômicas\n"
+        "- 🌤️ Climate Agent: Previsão meteorológica\n"
+        "- 💰 Price Agent: Análise histórica de preços\n"
+        "- 📊 Data Service: Gestão de usuários e análises\n"
+        "- 🔍 RAG Service: Busca em documentos técnicos\n"
+        "- 🤖 Ollama: Modelos de linguagem local"
+    ),
+    version="1.1.0",
+)
 
 
 # Configurar resposta JSON com UTF-8
 @app.middleware("http")
 async def add_charset_to_content_type(request: Request, call_next):
+    """
+    Middleware para garantir charset UTF-8 em respostas JSON.
+    
+    Garante que caracteres especiais em português sejam
+    corretamente exibidos no frontend.
+    """
     response = await call_next(request)
     if "application/json" in response.headers.get("content-type", ""):
         response.headers["content-type"] = "application/json; charset=utf-8"

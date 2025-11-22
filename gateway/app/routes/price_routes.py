@@ -12,6 +12,20 @@ router = APIRouter(prefix="/price", tags=["price"])
 
 @router.get("/{tipo_cafe}")
 async def get_coffee_price(tipo_cafe: str, price_client: httpx.AsyncClient = Depends(get_price_agent_client)):
+    """
+    Obtém análise histórica de preços de um tipo específico de café.
+
+    - **tipo_cafe**: Tipo do café (arábica, robusta)
+    
+    **Funcionamento:**
+    - Analisa os últimos 90 dias de dados de preço
+    - Calcula 30 médias móveis, cada uma representando 3 dias
+    
+    **Retorno:**
+    - 30 pontos de dados, cada um com média de 3 dias
+    
+    **Tipos suportados:** arábica, robusta
+    """
     try:
         response = await price_client.get(f"/preco/{tipo_cafe}")
         response.raise_for_status()

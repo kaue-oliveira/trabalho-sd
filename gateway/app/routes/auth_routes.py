@@ -12,10 +12,56 @@ class LoginRequest(BaseModel):
     email: str
     password: str
 
+    class Config:
+        schema_extra = {
+            "example": {
+                "email": "ana.cafeicultora@email.com",
+                "password": "CafeAna123"
+            }
+        }
+
+
 class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: dict
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "token_type": "bearer",
+                "user": {
+                    "id": 1,
+                    "nome": "Ana Costa",
+                    "email": "ana.cafeicultora@email.com",
+                    "tipo_conta": "PRODUTOR"
+                }
+            }
+        }
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "email": "ana.cafeicultora@email.com"
+            }
+        }
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "token": "reset_token_123",
+                "new_password": "NovaSenha456"
+            }
+        }
 
 
 # =====================================================
@@ -27,7 +73,13 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post("/login", response_model=LoginResponse)
 async def login(login_data: LoginRequest, data_client: httpx.AsyncClient = Depends(get_data_service_client)):
     """
-    Autentica usuário via Data Service e gera JWT
+    Autentica usuário no sistema e retorna token JWT.
+
+    - **email**: E-mail do usuário cadastrado
+    - **password**: Senha do usuário
+    
+    Retorna access_token para uso em requisições autenticadas
+    e dados do usuário autenticado.
     """
     try:
         resp = await data_client.post("/auth/login", json=login_data.dict())
@@ -48,29 +100,23 @@ async def login(login_data: LoginRequest, data_client: httpx.AsyncClient = Depen
 
 @router.post("/logout")
 async def logout():
+    """
+    Realiza logout do usuário.
+    
+    Nota: Em sistemas JWT stateless, o logout é realizado no cliente
+    através da remoção do token.
+    """
     return {"message": "Logout realizado com sucesso"}
-
-
-@router.get("/me")
-async def get_current_user(payload: dict = Depends(verify_token), data_client: httpx.AsyncClient = Depends(get_data_service_client)):
-    """
-    Retorna dados do usuário atual via Data Service.
-    """
-    user_id = int(payload.get("sub"))
-    try:
-        resp = await data_client.get(f"/usuarios/{user_id}")
-        resp.raise_for_status()
-        return resp.json()
-    except httpx.HTTPStatusError as e:
-        if e.response.status_code == 404:
-            raise HTTPException(status_code=404, detail="Usuário não encontrado")
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
-    except httpx.RequestError as e:
-        raise HTTPException(status_code=503, detail=f"Data Service não disponível: {str(e)}")
-
 
 @router.post("/forgot-password")
 async def forgot_password(payload: dict, data_client: httpx.AsyncClient = Depends(get_data_service_client)):
+    """
+    Solicita recuperação de senha para o e-mail informado.
+
+    - **email**: E-mail da conta para recuperação
+    
+    Envia instruções por e-mail para redefinição de senha.
+    """
     try:
         resp = await data_client.post("/auth/forgot-password", json=payload)
         resp.raise_for_status()
@@ -83,6 +129,14 @@ async def forgot_password(payload: dict, data_client: httpx.AsyncClient = Depend
 
 @router.post("/reset-password")
 async def reset_password(payload: dict, data_client: httpx.AsyncClient = Depends(get_data_service_client)):
+    """
+    Redefine a senha do usuário usando token de recuperação.
+
+    - **token**: Token recebido por e-mail
+    - **new_password**: Nova senha para a conta
+    
+    Redefine a senha e invalida o token de recuperação.
+    """
     try:
         resp = await data_client.post("/auth/reset-password", json=payload)
         resp.raise_for_status()
