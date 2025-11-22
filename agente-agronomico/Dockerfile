@@ -12,7 +12,7 @@ WORKDIR /app
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY main.py utils.py models.py /app/
+COPY main.py utils.py models.py agronomic_agent.py /app/
 
 EXPOSE 8000
 
