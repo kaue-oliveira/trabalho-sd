@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import csv
 
-def baixar_cepea(tipo_cafe, dias=120):
+def baixar_cepea(tipo_cafe):
     """
     Realiza scraping do site CEPEA para baixar dados históricos de preços.
     
@@ -22,6 +22,7 @@ def baixar_cepea(tipo_cafe, dias=120):
         5. Baixa e salva arquivo XLS
     """
     url_base = "https://www.cepea.org.br"
+    DIAS = 120
     # Cria sessão HTTP para manter cookies e headers
     sessao = requests.Session()
     # Define User-Agent para simular navegador
@@ -33,7 +34,7 @@ def baixar_cepea(tipo_cafe, dias=120):
     # Cálculo do período temporal
     data_final = datetime.now()  # Data final é sempre atual
     # Data inicial: ajusta para garantir dias úteis (considera fins de semana)
-    data_inicial = data_final - timedelta(days=int((dias / 5) * 7))
+    data_inicial = data_final - timedelta(days=int((DIAS / 5) * 7))
 
     # Mapeamento dinâmico do tipo de café para ID da tabela no CEPEA
     tabela_id = "23" if tipo_cafe == "arabica" else "24"

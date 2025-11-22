@@ -8,11 +8,9 @@ ENV LC_ALL=C.UTF-8
 
 WORKDIR /app
 
-# CORRIGIDO: caminho relativo
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# CORRIGIDO: caminho relativo
 COPY app ./app
 
 EXPOSE 3000

@@ -70,8 +70,8 @@ time curl -X POST http://localhost:3000/agro/recommend \
     "tipo_cafe": "arabica",
     "data_colheita": "2025-07-15",
     "quantidade": 150.5,
-    "cidade": "Patrocinio",
-    "estado": "MG",
+    "cidade": "Santos",
+    "estado": "SP",
     "estado_cafe": "verde"
   }'
 ```

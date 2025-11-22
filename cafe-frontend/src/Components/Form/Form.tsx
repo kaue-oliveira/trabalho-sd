@@ -1,3 +1,13 @@
+/**
+ * Componente de formulário reutilizável
+ * 
+ * Campos: texto, email, senha, select
+ * Features: toggle de senha, ícones, validações
+ * 
+ * Props: campos, título, ações, footer
+ * Estados: dados do form, visibilidade de senha
+ */
+
 import React, { useState } from 'react';
 import styles from './Form.module.css';
 

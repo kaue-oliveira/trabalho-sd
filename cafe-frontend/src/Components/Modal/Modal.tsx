@@ -1,3 +1,12 @@
+/**
+ * Componente de notificação/modal
+ * 
+ * Exibe mensagens de sucesso, erro ou info
+ * 
+ * Props: tipo, mensagem, duração, estado aberto/fechado
+ * Auto-fecha após duração configurada
+ */
+
 import React from 'react';
 import styles from './Modal.module.css';
 

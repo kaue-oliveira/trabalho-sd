@@ -1,3 +1,13 @@
+/**
+ * Barra lateral de navegação
+ * 
+ * Menu principal + perfil do usuário + logout
+ * 
+ * Dados: AuthContext (usuário)
+ * Rotas: dashboard, nova análise, histórico, perfil
+ * Estado ativo baseado na rota atual
+ */
+
 import React from 'react';
 import styles from './Sidebar.module.css';
 import { Link, useLocation, useNavigate } from 'react-router-dom';

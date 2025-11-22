@@ -1,3 +1,12 @@
+/**
+ * Página de login de usuário
+ * 
+ * Autentica usuário no sistema via AuthContext
+ * 
+ * Integrações: AuthContext.login(), API /auth/login
+ * Validações: email, senha
+ */
+
 import React, { useState } from 'react';
 import Form from '../../Components/Form/Form';
 import type { FormField } from '../../Components/Form/Form';

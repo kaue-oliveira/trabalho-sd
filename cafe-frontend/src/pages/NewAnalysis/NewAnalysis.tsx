@@ -1,3 +1,13 @@
+/**
+ * Página de nova análise de café
+ * 
+ * Formulário para análise com IA + resultados
+ * 
+ * APIs: /agro/recommend (POST), /analises (POST)
+ * Validações: campos obrigatórios, formato
+ * Estados: análise em andamento, salvamento
+ */
+
 import React, { useState } from 'react';
 import styles from './NewAnalysis.module.css';
 import Sidebar from '../../Components/Sidebar/Sidebar';

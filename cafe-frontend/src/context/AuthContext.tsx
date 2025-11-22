@@ -1,3 +1,16 @@
+/**
+ * Contexto de autenticação global
+ * 
+ * Gerencia:
+ * - Estado do usuário logado
+ * - Token JWT
+ * - Lista de análises do usuário
+ * - Funções de login/logout
+ * 
+ * Persistência: localStorage
+ * APIs: /auth/login, /auth/me, /analises
+ */
+
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { Usuario, AuthResponse } from '../types/auth.types';
 
@@ -41,12 +54,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
   const [analisesUsuario, setAnalisesUsuario] = useState<any[]>([]);
 
-  // função para adicionar análise (coloca no topo da lista)
+  // função para adicionar análise
   const addAnalise = (analise: any) => {
     setAnalisesUsuario(prev => [analise, ...prev]);
   };
 
-  // função para atualizar usuário (atualiza state e localStorage)
+  // função para atualizar usuário
   const updateUser = (updated: Usuario) => {
     setUser(updated);
     localStorage.setItem('user', JSON.stringify(updated));
@@ -157,7 +170,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     isAuthenticated: !!user && !!token,
     analisesUsuario,
-    addAnalise, // exposto para uso em componentes (ex: NewAnalysis)
+    addAnalise,
     updateUser
   };
 

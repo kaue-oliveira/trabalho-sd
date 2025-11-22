@@ -36,7 +36,7 @@ async def obter_preco_cafe(tipo_cafe: str):
     try:
         # FASE 1: Download e conversão de dados
         # Baixa planilha XLS do site CEPEA (120 dias para garantir 90 úteis)
-        nome_xls = baixar_cepea(tipo_cafe, dias=120)
+        nome_xls = baixar_cepea(tipo_cafe)
         # Converte XLS para CSV formatado
         ler_xls_para_csv(nome_xls, nome_csv)
         

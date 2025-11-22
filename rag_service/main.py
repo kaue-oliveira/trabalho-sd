@@ -7,6 +7,10 @@ app = FastAPI(title="RAG Service")
 def root():
     return {"service": "RAG Service", "status": "healthy"}
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 @app.on_event("startup")
 def startup_event():
     try:
