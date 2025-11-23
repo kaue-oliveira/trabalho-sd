@@ -109,3 +109,62 @@ O **Gateway** centraliza a comunicação e executa funções de:
 - **Facilidade de expansão:** novos agentes (por exemplo, de solo ou pragas) podem ser adicionados sem refatorar o sistema principal.  
 
 ---
+## 🧩 5. Validação do Problema
+
+A cafeicultura brasileira enfrenta, na última década, um cenário crescente de instabilidade causado por mudanças climáticas e oscilações bruscas do mercado. Estudos recentes demonstram que eventos extremos como geadas, estiagens prolongadas e chuvas intensas têm afetado diretamente a produtividade do café (Reis et al., 2025).
+
+Segundo o estudo **“Impacto das Mudanças Climáticas na Produção e nos Custos do Café no Brasil”**, os efeitos climáticos extremos foram responsáveis por perdas significativas na produção, especialmente nas safras de 2020, 2021 e 2023, causando:
+
+- reduções abruptas na produtividade do arábica;  
+- aumento dos custos de produção;  
+- necessidade de replantio e irrigação emergencial;  
+- mudança forçada de regiões produtivas.
+
+O relatório destaca que eventos como a **geada de 2021** comprometeram cerca de **20% da safra**, enquanto secas associadas a **El Niño** e **La Niña** provocaram quebras que pressionaram o mercado. A consequência econômica foi imediata: o preço da saca de 60 kg atingiu **R$ 2.504,53 em 2025**, o maior valor em décadas, segundo dados do CEPEA (2025) incluídos no estudo.
+
+Além da variabilidade climática, há também forte instabilidade no mercado nacional e internacional, influenciado por:
+
+- expectativa de oferta global;  
+- câmbio;  
+- estoques internacionais;  
+- condições meteorológicas no cinturão do café.
+
+O documento evidencia ainda a vulnerabilidade de **pequenos e médios produtores**, que possuem menor acesso a tecnologias de monitoramento climático, dados de mercado e assistência técnica — exatamente o público mais prejudicado pela ausência de ferramentas integradas de apoio à decisão.
+
+Portanto, os dados apontam para um problema real, comprovado e atual: a produção e a precificação do café no Brasil tornaram-se altamente dependentes de condições ambientais instáveis, exigindo métodos modernos de análise, monitoramento contínuo e suporte automatizado para tomada de decisão.
+
+---
+
+# ❗ A Dor que o Sistema Pretende Resolver
+
+Apesar da relevância e abundância de informações climáticas, agronômicas e de mercado, os produtores e cooperativas **não têm acesso a uma ferramenta unificada** que integre todos esses dados e gere recomendações práticas.
+
+A dor central é:
+
+### **→ Produtores e cooperativas não conseguem tomar decisões rápidas e precisas sobre o melhor momento de vender ou manejar a lavoura devido à falta de integração entre clima, preços e condições agronômicas.**
+
+Essa dor se desdobra em problemas reais identificados:
+
+- Dados climáticos estão espalhados entre INMET, Open-Meteo, institutos regionais e previsões globais.  
+- Dados de preço estão fragmentados em CEPEA, B3, ICO e relatórios diversos.  
+- Produtores não possuem tempo, conhecimento técnico ou estrutura para correlacionar essas informações.  
+- A instabilidade climática recente tornou a tomada de decisão muito arriscada.  
+- Erros de timing na venda resultam em perda financeira significativa.  
+- Pequenos produtores sofrem ainda mais pela falta de acesso a análise técnica.
+
+Hoje, as decisões sobre venda, colheita, manejo e planejamento ainda são feitas de forma manual, empírica ou baseada em informações desatualizadas — exatamente o ponto que o nosso sistema distribuído automatiza.
+
+---
+
+# ⚙️ Como o Sistema Resolve Essa Dor
+
+O projeto desenvolvido aplica **agentes distribuídos de IA**, cada um especializado em um domínio crítico (clima, preço e agronomia), capazes de:
+
+- coletar dados automaticamente;  
+- cruzar informações em tempo real;  
+- gerar análises explicáveis via LLM local (Ollama);  
+- produzir recomendações objetivas sobre o melhor momento de venda;  
+- reduzir risco e incerteza para o produtor.
+
+Isso transforma um ambiente caótico de dados desconectados em uma **análise estruturada, centralizada e acionável**, melhorando decisões e reduzindo perdas.
+
