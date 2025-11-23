@@ -1,3 +1,14 @@
+/**
+ * Página de perfil do usuário
+ * 
+ * Gerencia dados pessoais, alteração de senha e exclusão de conta
+ * 
+ * Integrações:
+ * - AuthContext (usuário e token)
+ * - API /usuarios/me (PUT, DELETE)
+ * - Sistema de notificações
+ */
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../Components/Sidebar/Sidebar';
@@ -20,7 +31,7 @@ const Profile: React.FC = () => {
 
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    
+
     const [formData, setFormData] = useState({
         fullName: userName,
         email: userEmail,
@@ -36,7 +47,7 @@ const Profile: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const validation = profileValidations.validateProfile(formData);
-        
+
         if (!validation.isValid) {
             showNotification('error', validation.message!);
             return;
@@ -54,42 +65,49 @@ const Profile: React.FC = () => {
             return;
         }
 
-        try {
-          const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
-          const payload: any = {
-            nome: formData.fullName,
-            email: formData.email,
-            tipo_conta: formData.accountType.toUpperCase()
-          };
-          if (formData.newPassword) payload.senha = formData.newPassword;
-
-          const tokenCheck = requireAuthToken(token);
-          if (!tokenCheck.isValid) {
+        const tokenCheck = requireAuthToken(token);
+        if (!tokenCheck.isValid) {
             showNotification('error', tokenCheck.message!);
             return;
-          }
+        }
 
-          const response = await fetch(`${API_BASE}/usuarios/me`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(payload)
-          });
+        try {
+            const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
+            const payload: any = {
+                nome: formData.fullName,
+                email: formData.email,
+                tipo_conta: formData.accountType.toUpperCase()
+            };
+            if (formData.newPassword) payload.senha = formData.newPassword;
 
-          if (!response.ok) {
-            const err = await response.json().catch(() => ({ detail: 'Erro' }));
-            showNotification('error', err.detail || 'Erro ao atualizar perfil');
-            return;
-          }
+            const response = await fetch(`${API_BASE}/usuarios/me`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
 
-          const updatedUser = await response.json();
-          try { updateUser(updatedUser); } catch (err) { /* fallback silencioso */ }
+            if (!response.ok) {
+                if (response.status === 401) {
+                    showNotification("error", "Sua sessão expirou. Faça login novamente.");
+                    setTimeout(() => {
+                        logout();
+                    }, 4000);
+                    return;
+                }
+                const err = await response.json().catch(() => ({ detail: 'Erro' }));
+                showNotification('error', err.detail || 'Erro ao atualizar perfil');
+                return;
+            }
 
-          showNotification('success', 'Perfil atualizado com sucesso!');
+            const updatedUser = await response.json();
+            try { updateUser(updatedUser); } catch (err) { /* fallback silencioso */ }
+
+            showNotification('success', 'Perfil atualizado com sucesso!');
         } catch (error) {
-          showNotification('error', 'Erro ao salvar perfil. Tente novamente.');
+            showNotification('error', 'Erro ao salvar perfil. Tente novamente.');
         }
     };
 
@@ -99,33 +117,43 @@ const Profile: React.FC = () => {
 
     const confirmDeleteAccount = async () => {
         setShowDeleteModal(false);
-        try {
-          const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
 
-          const tokenCheck = requireAuthToken(token);
-          if (!tokenCheck.isValid) {
+        const tokenCheck = requireAuthToken(token);
+        if (!tokenCheck.isValid) {
             showNotification('error', tokenCheck.message!);
             return;
-          }
+        }
+        
+        try {
+            const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
 
-          const response = await fetch(`${API_BASE}/usuarios/me`, {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${token}`
+            const response = await fetch(`${API_BASE}/usuarios/me`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    showNotification("error", "Sua sessão expirou. Faça login novamente.");
+                    setTimeout(() => {
+                        logout();
+                        navigate("/");
+                    }, 3000);
+                    return;
+                }
+                
+                const err = await response.json().catch(() => ({ detail: 'Erro' }));
+                showNotification('error', err.detail || 'Erro ao excluir conta');
+                return;
             }
-          });
 
-          if (!response.ok) {
-            const err = await response.json().catch(() => ({ detail: 'Erro' }));
-            showNotification('error', err.detail || 'Erro ao excluir conta');
-            return;
-          }
-
-          showNotification('success', 'Conta excluída com sucesso.');
-          logout();
-          navigate('/');
+            showNotification('success', 'Conta excluída com sucesso.');
+            logout();
+            navigate('/');
         } catch (error) {
-          showNotification('error', 'Erro ao excluir conta. Tente novamente.');
+            showNotification('error', 'Erro ao excluir conta. Tente novamente.');
         }
     };
 
@@ -303,10 +331,10 @@ const Profile: React.FC = () => {
                                     <i className={`${styles.materialIcon} ${styles.warningIcon}`}>warning</i>
                                     <h3 className={styles.modalTitle}>Excluir Conta</h3>
                                 </div>
-                                
+
                                 <div className={styles.modalContent}>
                                     <p className={styles.modalText}>
-                                        Tem certeza que deseja excluir sua conta? 
+                                        Tem certeza que deseja excluir sua conta?
                                         <strong> Todos os seus dados e análises serão perdidos permanentemente.</strong>
                                     </p>
                                     <p className={styles.modalWarning}>

@@ -1,7 +1,16 @@
+/**
+ * Componente principal da aplicação
+ * 
+ * Configura rotas, provedor de autenticação e proteção de rotas
+ * 
+ * Rotas: públicas, autenticação e protegidas
+ * AuthProvider envolve toda a aplicação
+ */
+
 import React from 'react';
 import './App.css';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext'; // 🚨 useAuth também
+import { AuthProvider, useAuth } from './context/AuthContext';
 import PublicHome from './pages/PublicHome/PublicHome';
 import LoginPage from './pages/AuthPages/LoginPage';
 import RegistrationPage from './pages/AuthPages/RegistrationPage';

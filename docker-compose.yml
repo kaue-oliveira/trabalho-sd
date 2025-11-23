@@ -1,0 +1,186 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15
+    container_name: cafe-db
+    environment:
+      POSTGRES_DB: cafequality
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5435:5432"
+    networks:
+      - agronet
+    restart: unless-stopped
+
+  data-service:
+    build:
+      context: ./cafe-data-service
+      dockerfile: Dockerfile
+    container_name: data-service
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: cafequality
+      DB_USER: postgres
+      DB_PASSWORD: password
+    ports:
+      - "8001:8000"
+    depends_on:
+      - db
+    networks:
+      - agronet
+    restart: unless-stopped
+
+  cafe-climate-agent:
+    build:
+      context: ./cafe-climate-agent
+      dockerfile: Dockerfile
+    container_name: cafe-climate-agent
+    ports:
+      - "8100:8000"
+    depends_on:
+      - data-service
+    networks:
+      - agronet
+    restart: unless-stopped
+
+  agro-agent:
+    build:
+      context: ./agente-agronomico
+      dockerfile: Dockerfile
+    container_name: agro-agent
+    networks:
+      - agronet
+    restart: unless-stopped
+
+  rag-service:
+    build:
+      context: ./rag_service
+      dockerfile: Dockerfile
+    container_name: rag-service
+    volumes:
+      - ./rag_service/pdfs:/app/pdfs
+    ports:
+      - "8102:8000"
+    networks:
+      - agronet
+    restart: unless-stopped
+
+  price-agent:
+    build:
+      context: ./cafe-price-agent
+      dockerfile: Dockerfile
+    container_name: price-agent
+    ports:
+      - "8103:8000"
+    networks:
+      - agronet
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: gateway
+    environment:
+      DATA_SERVICE_URL: "http://data-service:8000"
+      CLIMATE_AGENT_URL: "http://cafe-climate-agent:8000"
+      AGRO_AGENT_URL: "http://agro-agent:8000"
+      RAG_SERVICE_URL: "http://rag-service:8000"
+      OLLAMA_URL: "http://ollama:11434"
+      PRICE_AGENT_URL: "http://price-agent:8000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - data-service
+      - cafe-climate-agent
+      - agro-agent
+      - rag-service
+      - price-agent
+    networks:
+      - agronet
+    restart: unless-stopped
+
+
+  frontend:
+    build:
+      context: ./cafe-frontend
+      dockerfile: Dockerfile
+    container_name: cafe-frontend
+    ports:
+      - "5173:5173"
+    networks:
+      - agronet
+    depends_on:
+      - gateway
+    restart: unless-stopped
+
+  
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama      
+   
+    # -------------------------------
+    # GPU INTEL (Iris Xe) — DESABILITADO PARA COMMIT
+    # Descomente se estiver usando Intel Graphics + OpenVINO.
+    # devices:
+    #   - /dev/dri:/dev/dri
+    
+    # environment:
+    #   OLLAMA_INTEL_GPU: "1"            # Ativa GPU Intel via OpenVINO
+    #   OLLAMA_FLASH_ATTENTION: "1"      # Otimização para CPU Intel
+    #   OLLAMA_NUM_PARALLEL: "2"         # Execução paralela
+    #   OLLAMA_MAX_LOADED_MODELS: "2"    # Mantém 2 modelos em RAM
+    #   OLLAMA_KV_CACHE_TYPE: "q8_0"     # Cache otimizado p/ Intel
+    #   OLLAMA_CONTEXT_LENGTH: "2048"    # Contexto padrão
+    #   OLLAMA_LOG_LEVEL: "info"
+    # -------------------------------
+
+    # Configurações genéricas
+    environment:
+      OLLAMA_LOG_LEVEL: "info"
+      OLLAMA_CONTEXT_LENGTH: "2048"
+      OLLAMA_MAX_LOADED_MODELS: "2"
+      OLLAMA_NUM_PARALLEL: "2"
+
+    group_add:
+      - video
+    networks:
+      - agronet
+    restart: unless-stopped
+
+  ollama-init:
+    image: curlimages/curl:latest
+    container_name: ollama-init
+    depends_on:
+      - ollama
+    entrypoint: >
+      sh -c '
+        echo "Aguardando Ollama iniciar...";
+        sleep 8;
+        echo "Baixando modelo LLM (phi3:mini)...";
+        curl -X POST http://ollama:11434/api/pull -d "{\"name\":\"phi3:mini\"}";
+        echo "Baixando modelo de embedding...";
+        curl -X POST http://ollama:11434/api/pull -d "{\"name\":\"nomic-embed-text\"}";
+        echo "Modelos carregados!";
+      '
+    networks:
+      - agronet
+    restart: "no"
+
+volumes:
+  postgres_data:
+  ollama_data:
+
+networks:
+  agronet:
+    driver: bridge

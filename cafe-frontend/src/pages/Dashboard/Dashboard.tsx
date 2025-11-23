@@ -1,3 +1,13 @@
+/**
+ * Página principal do dashboard
+ * 
+ * Visão geral com estatísticas e análises recentes
+ * 
+ * Dados: AuthContext (usuário, análises)
+ * Estatísticas: contagem por decisão, total
+ * Navegação: nova análise, histórico
+ */
+
 import styles from './Dashboard.module.css';
 import { Link, useNavigate } from 'react-router-dom';
 import Sidebar from '../../Components/Sidebar/Sidebar';
@@ -8,6 +18,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
 
   const userName = user?.nome || "Usuário";
+  const firstTwoNames = userName.split(" ").slice(0, 2).join(" ");
   
   const handleNewAnalysis = () => {
     console.log("Nova análise iniciada");
@@ -26,7 +37,6 @@ const Dashboard: React.FC = () => {
 
   // Calcular estatísticas
   const sellNowCount = analisesUsuario.filter(a => a.decisao === "VENDER").length;
-  const sellPartiallyCount = analisesUsuario.filter(a => a.decisao === "VENDER_PARCIALMENTE").length;
   const waitCount = analisesUsuario.filter(a => a.decisao === "AGUARDAR").length;
   const totalAnalises = analisesUsuario.length;
 
@@ -36,8 +46,7 @@ const Dashboard: React.FC = () => {
     date: new Date(analise.data_colheita).toLocaleDateString('pt-BR'),
     coffeeType: analise.tipo_cafe,
     quantity: `${analise.quantidade} kg`,
-    decision: analise.decisao === "VENDER" ? "Vender Agora" : 
-              analise.decisao === "VENDER_PARCIALMENTE" ? "Vender Parcialmente" : 
+    decision: analise.decisao === "VENDER" ? "Vender Agora" :  
               "Aguardar"
   });
 
@@ -52,7 +61,7 @@ const Dashboard: React.FC = () => {
           <section className={styles.heroSection}>
             <div className={styles.heroContent}>
               <div className={styles.heroText}>
-                <h1 className={styles.heroTitle}>Bem-vindo de volta, {userName}!</h1>
+                <h1 className={styles.heroTitle}>Bem-vindo de volta, {firstTwoNames}!</h1>
                 <p className={styles.heroSubtitle}>
                   Sua plataforma para análise inteligente de decisões de venda do café.
                 </p>
@@ -76,10 +85,6 @@ const Dashboard: React.FC = () => {
               <div className={styles.statCard}>
                 <p className={styles.statLabel}>Vender Agora</p>
                 <p className={styles.statValue}>{sellNowCount}</p>
-              </div>
-              <div className={styles.statCard}>
-                <p className={styles.statLabel}>Vender Parcialmente</p>
-                <p className={styles.statValue}>{sellPartiallyCount}</p>
               </div>
               <div className={styles.statCard}>
                 <p className={styles.statLabel}>Aguardar</p>
@@ -118,8 +123,7 @@ const Dashboard: React.FC = () => {
                       <td>
                         <div className={
                           analysis.decision === "Vender Agora" ? styles.decisionSellNow :
-                            analysis.decision === "Vender Parcialmente" ? styles.decisionSellPartially :
-                              styles.decisionWait
+                            styles.decisionWait
                         }>
                           {analysis.decision}
                         </div>

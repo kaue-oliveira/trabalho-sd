@@ -1,3 +1,13 @@
+/**
+ * Página de cadastro de novo usuário
+ * 
+ * Cria conta de produtor/cooperativa no sistema
+ * 
+ * Integrações: API /usuarios (POST)
+ * Validações: nome, email, senha, confirmação
+ */
+
+
 import Form from '../../Components/Form/Form';
 import type { FormField } from '../../Components/Form/Form';
 import Modal from '../../Components/Modal/Modal';
@@ -32,7 +42,7 @@ const RegistrationPage: React.FC = () => {
       placeholder: '••••••••',
       icon: 'lock',
       showPasswordToggle: true,
-      helperText: 'Use pelo menos 8 caracteres com letras e números'
+      helperText: 'Use pelo menos 6 caracteres com letras e números'
     },
     {
       name: 'confirmPassword',

@@ -1,10 +1,18 @@
-FROM python:3.11
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
+# Copiar e instalar dependências - caminhos relativos
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Copiar código fonte
+COPY app ./app
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+EXPOSE 8000
+
+# Comando: uvicorn apontando para a app
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

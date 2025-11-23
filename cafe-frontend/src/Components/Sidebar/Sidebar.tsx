@@ -1,3 +1,13 @@
+/**
+ * Barra lateral de navegação
+ * 
+ * Menu principal + perfil do usuário + logout
+ * 
+ * Dados: AuthContext (usuário)
+ * Rotas: dashboard, nova análise, histórico, perfil
+ * Estado ativo baseado na rota atual
+ */
+
 import React from 'react';
 import styles from './Sidebar.module.css';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -9,6 +19,7 @@ const Sidebar: React.FC = () => {
   const { user, logout } = useAuth();
   
   const userName = user?.nome || "Usuário";
+  const firstTwoNames = userName.split(" ").slice(0, 2).join(" ");
   const userInitial = userName.charAt(0).toUpperCase();
 
   const handleLogout = () => {
@@ -75,7 +86,7 @@ const Sidebar: React.FC = () => {
             }`}
           >
           <div className={styles.avatarCircle}>{userInitial}</div>
-          <p className={styles.profileName}>{userName}</p>
+          <p className={styles.profileName}>{firstTwoNames}</p>
         </Link>
 
         <button onClick={handleLogout} className={styles.navLink} >

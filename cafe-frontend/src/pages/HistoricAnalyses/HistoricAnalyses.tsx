@@ -1,3 +1,13 @@
+/**
+ * Página de histórico de análises
+ * 
+ * Lista filtrada e paginada das análises
+ * 
+ * Filtros: data, tipo de café, decisão
+ * Paginação: 3 itens por página
+ * Ordenação: mais recentes primeiro
+ */
+
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../Components/Sidebar/Sidebar';
@@ -6,8 +16,7 @@ import styles from './HistoricAnalyses.module.css';
 
 const decisionLabel = (decisao: string) => {
   if (decisao === 'VENDER') return 'Vender Agora';
-  if (decisao === 'AGUARDAR') return 'Aguardar';
-  return 'Vender Parcialmente';
+  return 'Aguardar';
 };
 
 const getDecisionClass = (decision: string) => {
@@ -16,8 +25,6 @@ const getDecisionClass = (decision: string) => {
       return `${styles.decisionBadge} ${styles.decisionSell}`;
     case 'AGUARDAR':
       return `${styles.decisionBadge} ${styles.decisionHold}`;
-    case 'VENDER_PARCIALMENTE':
-      return `${styles.decisionBadge} ${styles.decisionPartial}`;
     default:
       return styles.decisionBadge;
   }
@@ -150,7 +157,7 @@ const HistoricAnalyses: React.FC = () => {
   const [dateFilter, setDateFilter] = useState('');
   const [coffeeTypeFilter, setCoffeeTypeFilter] = useState('');
   const [decisionFilter, setDecisionFilter] = useState('');
-  const perPage = 7;
+  const perPage = 3;
 
   const { analisesUsuario } = useAuth();
 

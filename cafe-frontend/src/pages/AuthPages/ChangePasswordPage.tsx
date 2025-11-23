@@ -1,14 +1,26 @@
+/**
+ * Página de redefinição de senha
+ * 
+ * Altera senha usando token de recuperação
+ * 
+ * Integrações: API /auth/reset-password (POST)
+ * Validações: token, nova senha, confirmação
+ */
+
 import Form from '../../Components/Form/Form';
 import type { FormField } from '../../Components/Form/Form';
 import Modal from '../../Components/Modal/Modal';
 import styles from './AuthPages.module.css';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { changePasswordValidations } from '../../utils/Validations';
 import { useNotification } from '../../hooks/useNotification';
 
 const ChangePasswordPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { notification, showNotification, closeNotification } = useNotification();
+
+  const token = searchParams.get('token');
 
   const fields: FormField[] = [
     {
@@ -30,6 +42,11 @@ const ChangePasswordPage: React.FC = () => {
   ];
 
   const handleSubmit = async (data: Record<string, string>) => {
+    if (!token) {
+      showNotification('error', 'Link de redefinição inválido ou expirado. Solicite um novo link na página "Esqueci minha senha"');
+      return;
+    }
+
     const validation = changePasswordValidations.validateChangePassword(
       data.newPassword,
       data.confirmPassword
@@ -41,11 +58,21 @@ const ChangePasswordPage: React.FC = () => {
     }
 
     try {
-      console.log('Senha alterada:', data);
+      const API_BASE = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
+      const response = await fetch(`${API_BASE}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: token,
+          new_password: data.newPassword
+        }),
+      });
 
-      // =====================================================
-      // **TROCAR AQUI QUANDO GATEWAY ESTIVER PRONTO**
-      // =====================================================
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Erro ao redefinir senha' }));
+        showNotification('error', errorData.detail || 'Erro ao alterar senha');
+        return;
+      }
 
       showNotification('success', 'Senha alterada com sucesso!');
       setTimeout(() => navigate('/login'), 1500);
@@ -79,7 +106,7 @@ const ChangePasswordPage: React.FC = () => {
         onClose={closeNotification}
         type={notification.type}
         message={notification.message}
-        duration={notification.type === 'success' ? 3000 : 4000}
+        duration={notification.type === 'success' ? 3000 : 5000}
       />
     </div>
   );

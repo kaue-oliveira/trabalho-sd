@@ -268,7 +268,6 @@
 }
 
 .decisionSellNow,
-.decisionSellPartially,
 .decisionWait {
   display: inline-flex;
   align-items: center;
@@ -281,11 +280,6 @@
 .decisionSellNow {
   background-color: #dcfce7;
   color: #166534;
-}
-
-.decisionSellPartially {
-  background-color: #fef9c3;
-  color: #854d0e;
 }
 
 .decisionWait {
