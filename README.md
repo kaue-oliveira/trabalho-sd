@@ -168,3 +168,7 @@ O projeto desenvolvido aplica **agentes distribuídos de IA**, cada um especiali
 
 Isso transforma um ambiente caótico de dados desconectados em uma **análise estruturada, centralizada e acionável**, melhorando decisões e reduzindo perdas.
 
+### 📚 Referência
+
+REIS, Jhara Costa; COSTA, Maria Claudia Coutinho da; MATHIAS, Natalie Nascimento; PASSOS, Nicole Magalhães. *Impacto das mudanças climáticas na produção e nos custos do café no Brasil.* São Roque: Centro Paula Souza – Faculdade de Tecnologia de São Roque “Dr. Bernardino de Campos”, 1º semestre de 2025.
+
