@@ -87,6 +87,6 @@
 
     Filtragem e validação de inputs no API Gateway. Protege contra SQL Injection, XSS e injeção de dados em análises.
 
-- #### Redundância para API de Clima (IMPLEMENTAR)
+- #### Load Balancer no Gateway (IMPLEMENTAR)
 
-    Múltiplos provedores de clima e cache de fallback no ClimaService. Garante disponibilidade contínua mesmo em caso de falha da API externa.
+    Implementação de um mecanismo de balanceamento de carga no próprio Gateway, distribuindo requisições entre múltiplas instâncias e reduzindo o impacto de ataques DDoS e sobrecarga.
