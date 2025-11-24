@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 import os
 from app.services.scraper import baixar_cepea, ler_xls_para_csv
 from app.services.processor import processar_dados
-from app.utils.calc import calcular_medias_moveis
+from app.utils.calc import calcular_medias_moveis, calcular_desvio_padrao_10_dias
 
 router = APIRouter()
 
@@ -44,12 +44,14 @@ async def obter_preco_cafe(tipo_cafe: str):
         dados_90_dias = dados_processados[:90]
 
         medias = calcular_medias_moveis(dados_90_dias)
+        desvios = calcular_desvio_padrao_10_dias(dados_90_dias)
 
         resposta = {
             "tipo_cafe": tipo_cafe,
             "dias_analisados": len(dados_90_dias),
             "data_mais_recente": dados_90_dias[0]['data'].strftime('%d/%m/%Y'),
             "preco_atual": dados_90_dias[0]['preco'],
+            "desvio_padrao_10_dias": desvios, 
             "medias_moveis_3_dias": medias
         }
         
