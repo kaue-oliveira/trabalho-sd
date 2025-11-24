@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS analises (
     estado VARCHAR(2) NOT NULL,
     estado_cafe VARCHAR(20) NOT NULL CHECK (estado_cafe IN ('verde', 'torrado', 'moído')),
     data_analise DATE NOT NULL,
-    decisao VARCHAR(20) NOT NULL CHECK (decisao IN ('VENDER', 'VENDER_PARCIALMENTE', 'AGUARDAR')),
+    decisao VARCHAR(20) NOT NULL CHECK (decisao IN ('VENDER', 'AGUARDAR')),
     explicacao_decisao TEXT NOT NULL,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
