@@ -132,25 +132,25 @@ services:
     # -------------------------------
     # GPU INTEL (Iris Xe) — DESABILITADO PARA COMMIT
     # Descomente se estiver usando Intel Graphics + OpenVINO.
-    devices:
-      - /dev/dri:/dev/dri
+    # devices:
+    #   - /dev/dri:/dev/dri
     
-    environment:
-      OLLAMA_INTEL_GPU: "1"            # Ativa GPU Intel via OpenVINO
-      OLLAMA_FLASH_ATTENTION: "1"      # Otimização para CPU Intel
-      OLLAMA_NUM_PARALLEL: "2"         # Execução paralela
-      OLLAMA_MAX_LOADED_MODELS: "2"    # Mantém 2 modelos em RAM
-      OLLAMA_KV_CACHE_TYPE: "q8_0"     # Cache otimizado p/ Intel
-      OLLAMA_CONTEXT_LENGTH: "2048"    # Contexto padrão
-      OLLAMA_LOG_LEVEL: "info"
+    # environment:
+    #   OLLAMA_INTEL_GPU: "1"            # Ativa GPU Intel via OpenVINO
+    #   OLLAMA_FLASH_ATTENTION: "1"      # Otimização para CPU Intel
+    #   OLLAMA_NUM_PARALLEL: "2"         # Execução paralela
+    #   OLLAMA_MAX_LOADED_MODELS: "2"    # Mantém 2 modelos em RAM
+    #   OLLAMA_KV_CACHE_TYPE: "q8_0"     # Cache otimizado p/ Intel
+    #   OLLAMA_CONTEXT_LENGTH: "2048"    # Contexto padrão
+    #   OLLAMA_LOG_LEVEL: "info"
     # -------------------------------
 
     # Configurações genéricas
-    # environment:
-    #   OLLAMA_LOG_LEVEL: "info"
-    #   OLLAMA_CONTEXT_LENGTH: "2048"
-    #   OLLAMA_MAX_LOADED_MODELS: "2"
-    #   OLLAMA_NUM_PARALLEL: "2"
+    environment:
+      OLLAMA_LOG_LEVEL: "info"
+      OLLAMA_CONTEXT_LENGTH: "2048"
+      OLLAMA_MAX_LOADED_MODELS: "2"
+      OLLAMA_NUM_PARALLEL: "2"
 
     group_add:
       - video
