@@ -7,6 +7,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from enum import Enum
 
+
 # Alias para manter compatibilidade
 Usuario = UsuarioResponse
 

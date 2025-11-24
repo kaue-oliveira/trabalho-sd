@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routes import usuarios, analises, precos
+from app.routes import usuarios, analises, auth
 from app.database import engine, Base
 
 # Criar tabelas no banco (em produção usar Alembic para migrations)
@@ -14,6 +14,7 @@ app = FastAPI(
 # Incluir rotas
 app.include_router(usuarios.router)
 app.include_router(analises.router)
+app.include_router(auth.router)
 @app.get("/")
 def root():
     return {"message": "Cafe Data Service - API REST"}

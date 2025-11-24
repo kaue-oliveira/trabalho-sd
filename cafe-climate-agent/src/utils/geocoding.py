@@ -3,6 +3,7 @@ import unicodedata
 from typing import Dict, Optional
 
 def normalize_name(name: str) -> str:
+    """Remove acentos e padroniza o nome da cidade"""
     name = name.lower().strip()
     return "".join(
         c for c in unicodedata.normalize("NFD", name)
