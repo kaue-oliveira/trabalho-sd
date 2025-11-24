@@ -98,7 +98,10 @@ const Profile: React.FC = () => {
                     return;
                 }
                 const err = await response.json().catch(() => ({ detail: 'Erro' }));
-                showNotification('error', err.detail || 'Erro ao atualizar perfil');
+                const mensagem = typeof err.detail === 'string' 
+                ? JSON.parse(err.detail).detail 
+                : err.detail;
+                showNotification('error', mensagem || 'Erro ao atualizar perfil');
                 return;
             }
 

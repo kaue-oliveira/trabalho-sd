@@ -94,7 +94,12 @@ const RegistrationPage: React.FC = () => {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({ detail: 'Erro no servidor' }));
-        showNotification('error', err.detail || 'Erro ao cadastrar');
+
+        const mensagem = typeof err.detail === 'string' 
+        ? JSON.parse(err.detail).detail 
+        : err.detail;
+        
+        showNotification('error', mensagem || 'Erro ao cadastrar');
         return;
       }
 
