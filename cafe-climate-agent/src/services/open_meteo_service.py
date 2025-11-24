@@ -1,6 +1,6 @@
 import requests
 from datetime import datetime, timedelta
-from models.climate_models import ClimateResponse, DailyForecast
+from models.climate_models import ClimateResponse, DailyForecast, LocationRequest
 from utils.geocoding import get_coordinates
 
 class OpenMeteoService:
@@ -9,10 +9,14 @@ class OpenMeteoService:
         self.archive_url = "https://archive-api.open-meteo.com/v1/archive"
 
     def get_forecast(self, location: str) -> ClimateResponse:
-        geo_data = get_coordinates(location)
+        # Sanitização executada pelo Pydantic
+        sanitized = LocationRequest(location=location)
+        clean_location = sanitized.location
+
+        geo_data = get_coordinates(clean_location)
         latitude, longitude = geo_data["latitude"], geo_data["longitude"]
 
-        # ====== 1. PREVISÃO FUTURA (14 DIAS) ======
+        # ===== 1. PREVISÃO (14 dias) =====
         forecast_params = {
             "latitude": latitude,
             "longitude": longitude,
@@ -30,20 +34,19 @@ class OpenMeteoService:
         }
 
         try:
-            forecast_response = requests.get(self.forecast_url, params=forecast_params)
-            forecast_response.raise_for_status()
-            forecast_data = forecast_response.json()
+            response = requests.get(self.forecast_url, params=forecast_params)
+            response.raise_for_status()
+            forecast_data = response.json()
         except requests.exceptions.RequestException as e:
             raise Exception(f"Erro ao consultar previsão: {str(e)}")
 
         forecasts = self._parse_forecast(forecast_data)
 
-        # ====== 2. HISTÓRICO (1, 2 e 3 MESES ATRÁS) ======
+        # ===== 2. HISTÓRICO (1, 2 e 3 meses atrás) =====
         now = datetime.utcnow()
         averages = {}
 
         for months_back in [1, 2, 3]:
-            # Calcula período do mês correspondente
             ref_date = now.replace(day=1) - timedelta(days=(months_back * 30))
             start_date = ref_date.replace(day=1)
             end_date = (start_date + timedelta(days=30))
@@ -71,9 +74,9 @@ class OpenMeteoService:
 
             averages[f"{months_back}_mes_atras"] = self._compute_monthly_average(archive_data)
 
-        # ====== 3. RETORNO FINAL ======
+        # ===== 3. RETORNO FINAL =====
         return ClimateResponse(
-            location=location,
+            location=clean_location,
             latitude=latitude,
             longitude=longitude,
             timezone=geo_data["timezone"],
@@ -84,23 +87,23 @@ class OpenMeteoService:
         )
 
     def _parse_forecast(self, data: dict):
-        daily_data = data["daily"]
+        daily = data["daily"]
         forecasts = []
-        for i in range(len(daily_data["time"])):
+
+        for i in range(len(daily["time"])):
             forecasts.append(DailyForecast(
-                date=daily_data["time"][i],
-                temperature_2m_max=daily_data["temperature_2m_max"][i],
-                temperature_2m_min=daily_data["temperature_2m_min"][i],
-                precipitation_sum=daily_data["precipitation_sum"][i],
-                precipitation_hours=daily_data.get("precipitation_hours", [None])[i],
-                windspeed_10m_max=daily_data["windspeed_10m_max"][i],
-                winddirection_10m_dominant=daily_data.get("winddirection_10m_dominant", [None])[i],
-                weathercode=daily_data["weathercode"][i]
+                date=daily["time"][i],
+                temperature_2m_max=daily["temperature_2m_max"][i],
+                temperature_2m_min=daily["temperature_2m_min"][i],
+                precipitation_sum=daily["precipitation_sum"][i],
+                precipitation_hours=daily.get("precipitation_hours", [None])[i],
+                windspeed_10m_max=daily["windspeed_10m_max"][i],
+                winddirection_10m_dominant=daily.get("winddirection_10m_dominant", [None])[i],
+                weathercode=daily["weathercode"][i]
             ))
         return forecasts
 
     def _compute_monthly_average(self, data: dict):
-        """Calcula médias simples de temperatura, chuva e vento."""
         daily = data.get("daily", {})
         n = len(daily.get("time", []))
         if n == 0:
