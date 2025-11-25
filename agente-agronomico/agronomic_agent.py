@@ -123,9 +123,11 @@ def analyze_price_trends(
     preco: Dict[str, Any],
     quantidade: float = 0,
     estado_cafe: str = "",
+    data_colheita: str = "",
 ) -> float:
     """
     Analisa tendências de preço e retorna um score de favorabilidade para venda.
+    Considera também o tempo de armazenamento baseado no estado do café.
     """
     score = 0.5
     
@@ -283,6 +285,56 @@ def analyze_price_trends(
             if tendencia_recente > 0.08:
                 score -= 0.08
     
+    # 8. Análise de tempo de armazenamento
+    if data_colheita and estado_cafe:
+        data_colheita_dt = datetime.strptime(data_colheita, "%Y-%m-%d")
+        dias_desde_colheita = (datetime.now() - data_colheita_dt).days
+        estado_lower = estado_cafe.lower()
+        
+        # Limites de armazenamento por estado do café
+        # Verde: até 12 meses (365 dias) em condições adequadas
+        # Torrado em grãos: 60 dias para qualidade ideal
+        # Moído: 30 dias para qualidade ideal
+        
+        if "moido" in estado_lower or "moído" in estado_lower:
+            limite_ideal = 30
+            limite_critico = 45
+            if dias_desde_colheita > limite_critico:
+                # Café moído muito antigo - vender urgente
+                score += 0.40
+            elif dias_desde_colheita > limite_ideal:
+                # Passando do ideal - vender logo
+                score += 0.20
+            elif dias_desde_colheita > limite_ideal * 0.7:  # >21 dias
+                # Se aproximando do limite - favorece venda
+                score += 0.10
+                
+        elif "torrado" in estado_lower:
+            limite_ideal = 60
+            limite_critico = 90
+            if dias_desde_colheita > limite_critico:
+                # Café torrado muito antigo - vender urgente
+                score += 0.35
+            elif dias_desde_colheita > limite_ideal:
+                # Passando do ideal - vender logo
+                score += 0.20
+            elif dias_desde_colheita > limite_ideal * 0.8:  # >48 dias
+                # Se aproximando do limite - favorece venda
+                score += 0.12
+                
+        elif "verde" in estado_lower:
+            limite_ideal = 180  # 6 meses para melhor qualidade
+            limite_aceitavel = 365  # 12 meses limite máximo
+            if dias_desde_colheita > limite_aceitavel:
+                # Café verde muito antigo - vender urgente
+                score += 0.30
+            elif dias_desde_colheita > limite_ideal:
+                # Passando de 6 meses - começar a vender
+                score += 0.15
+            elif dias_desde_colheita < 60:
+                # Café muito recente - pode aguardar melhor preço
+                score -= 0.10
+
     return max(0.0, min(1.0, score))
 
 
@@ -370,6 +422,52 @@ def build_ai_prompt(
     data_colheita = payload.get("data_colheita", "")
     quantidade = payload.get("quantidade", 0)
     estado_cafe = payload.get("estado_cafe", "")
+    
+    # Calcular dias desde colheita e status de armazenamento
+    dias_desde_colheita = 0
+    status_armazenamento = "N/A"
+    limite_armazenamento = "N/A"
+    
+    if data_colheita and estado_cafe:
+        data_colheita_dt = datetime.strptime(data_colheita, "%Y-%m-%d")
+        dias_desde_colheita = (datetime.now() - data_colheita_dt).days
+        estado_lower = estado_cafe.lower()
+        
+        # Definir limites e status baseado no estado do café
+        if "moido" in estado_lower or "moído" in estado_lower:
+            limite_ideal = 30
+            limite_critico = 45
+            limite_armazenamento = f"{limite_ideal} dias (ideal), {limite_critico} dias (crítico)"
+            if dias_desde_colheita > limite_critico:
+                status_armazenamento = "CRÍTICO - Qualidade comprometida"
+            elif dias_desde_colheita > limite_ideal:
+                status_armazenamento = "ATENÇÃO - Próximo ao limite ideal"
+            else:
+                status_armazenamento = "ÓTIMO - Dentro do período ideal"
+                
+        elif "torrado" in estado_lower:
+            limite_ideal = 60
+            limite_critico = 90
+            limite_armazenamento = f"{limite_ideal} dias (ideal), {limite_critico} dias (crítico)"
+            if dias_desde_colheita > limite_critico:
+                status_armazenamento = "CRÍTICO - Qualidade comprometida"
+            elif dias_desde_colheita > limite_ideal:
+                status_armazenamento = "ATENÇÃO - Próximo ao limite ideal"
+            else:
+                status_armazenamento = "ÓTIMO - Dentro do período ideal"
+                
+        elif "verde" in estado_lower:
+            limite_ideal = 180
+            limite_aceitavel = 365
+            limite_armazenamento = f"{limite_ideal} dias (ideal), {limite_aceitavel} dias (máximo)"
+            if dias_desde_colheita > limite_aceitavel:
+                status_armazenamento = "CRÍTICO - Acima do limite máximo"
+            elif dias_desde_colheita > limite_ideal:
+                status_armazenamento = "ATENÇÃO - Acima de 6 meses"
+            elif dias_desde_colheita < 60:
+                status_armazenamento = "RECENTE - Pode aguardar melhor momento"
+            else:
+                status_armazenamento = "ÓTIMO - Período adequado para venda"
     
     # Extrair dados climáticos relevantes
     forecast = clima.get("daily_forecast", [])
@@ -535,6 +633,12 @@ def build_ai_prompt(
         - Quantidade: {quantidade} sacas
         - Data de colheita: {data_colheita}
 
+        **ANÁLISE DE ARMAZENAMENTO:**
+        - O estado do café ({estado_cafe}) implica os seguintes limites de armazenamento:
+        - Dias desde colheita: {dias_desde_colheita} dias
+        - Status: {status_armazenamento}
+        - Limites de armazenamento ({estado_cafe}): {limite_armazenamento}
+
         **CONTEXTO ADICIONAL (Relatórios):**
         {'- ' + ' | '.join(insights_relatorios) if insights_relatorios else 'Nenhum insight relevante dos relatórios para esta decisão específica.'}
 
@@ -548,10 +652,11 @@ def build_ai_prompt(
            - Impacto das temperaturas, chuva e vento no café {estado_cafe}
            - Risco de dias críticos (chuva intensa/calor extremo)
 
-        2. **Análise de Preços Avançada**:
+        2. **Análise de Preços e Armazenamento**:
            - Significado da tendência {tendencia_curta} e variação de {variacao_curta:+.1f}%
            - Posicionamento do preço atual vs histórico (R$ {preco_atual:.2f} vs R$ {media_geral:.2f})
            - Impacto da volatilidade (desvio R$ {ultimo_desvio:.2f})
+           - Armazenamento: {dias_desde_colheita} dias desde colheita - Status: {status_armazenamento}
 
         **CONTEXTO SECUNDÁRIO (20% da explicação):**
         3. **Considerações Complementares**: Apenas se muito relevante, mencione brevemente insights dos relatórios
