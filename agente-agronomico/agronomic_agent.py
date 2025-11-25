@@ -5,280 +5,307 @@ Este módulo contém funções para análise de dados climáticos, de preços e 
 de mercado, construção de prompts para o modelo de IA e tomada de decisão final.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, List, Sequence
 from datetime import datetime
 
 
-def analyze_climate_factors(clima: dict, tipo_cafe: str, estado_cafe: str = "", data_colheita: str = "") -> float:
+def _safe_mean(values: Sequence[float], default: float = 0.0) -> float:
+    """Calcula média de forma segura, evitando divisão por zero."""
+    values = [v for v in values if v is not None]
+    return sum(values) / len(values) if values else default
+
+
+def analyze_climate_factors(
+    clima: Dict[str, Any],
+    tipo_cafe: str,
+    estado_cafe: str = "",
+    data_colheita: str = "",
+) -> float:
     """
-    Analisa fatores climáticos e retorna um score
-    
-    Args:
-        clima: Dicionário com dados climáticos do Open-Meteo contendo:
-               - daily_forecast: previsão dos próximos 14 dias
-               - past_month_averages: médias históricas
-        tipo_cafe: arabica ou robusta
-        estado_cafe: verde, torrado ou moido
-        data_colheita: Data da colheita (YYYY-MM-DD)
-        
-    Returns:
-        Score indicando favorabilidade para venda
+    Analisa fatores climáticos e retorna um score de favorabilidade para venda.
     """
     score = 0.5  # Score neutro
     
     if not clima or "daily_forecast" not in clima:
-        return score
+        raise ValueError("Dados climáticos inválidos: 'daily_forecast' não encontrado")
     
-    forecast = clima.get("daily_forecast", [])
+    forecast = clima["daily_forecast"]
     if not forecast:
-        return score
+        raise ValueError("Dados climáticos inválidos: 'daily_forecast' está vazio")
     
     # Analisa próximos 14 dias (período crítico para decisão)
     next_days = forecast[:14]
+    if not next_days:
+        raise ValueError("Dados climáticos inválidos: menos de 1 dia disponível")
     
-    # Calcula médias dos próximos 14 dias
-    avg_temp_max = sum(day.get("temperature_2m_max", 20) for day in next_days) / len(next_days)
-    avg_temp_min = sum(day.get("temperature_2m_min", 15) for day in next_days) / len(next_days)
-    total_precipitation = sum(day.get("precipitation_sum", 0) for day in next_days)
-    total_precip_hours = sum(day.get("precipitation_hours", 0) for day in next_days)
-    avg_windspeed = sum(day.get("windspeed_10m_max", 10) for day in next_days) / len(next_days)
+    # Calcula médias/valores agregados dos próximos 14 dias
+    avg_temp_max = _safe_mean([day.get("temperature_2m_max", 20.0) for day in next_days], 20.0)
+    avg_temp_min = _safe_mean([day.get("temperature_2m_min", 15.0) for day in next_days], 15.0)
+    total_precipitation = sum(day.get("precipitation_sum", 0.0) for day in next_days)
+    total_precip_hours = sum(day.get("precipitation_hours", 0.0) for day in next_days)
+    avg_windspeed = _safe_mean([day.get("windspeed_10m_max", 10.0) for day in next_days], 10.0)
     
-    # 1. Análise de temperatura (peso maior)
-    # Temperatura ideal para armazenamento/transporte: 18-28°C
     tipo_cafe = tipo_cafe.lower()
+    
+    # 1. Análise de temperatura
     if tipo_cafe == "arabica":
-        # Condições ótimas
         if 18 <= avg_temp_max <= 22 and avg_temp_min >= 13:
-            score += 0.25  
-        # Condições muito ruins
+            score += 0.25
         elif avg_temp_max > 32 or avg_temp_min < 13:
-            score -= 0.30  
-        # Temperaturas fora do ideal, mas não críticas
+            score -= 0.30
         else:
-            score -= 0.15  
+            score -= 0.15
 
     elif tipo_cafe == "robusta":
-        # Condições ótimas
         if 22 <= avg_temp_max <= 28 and avg_temp_min >= 15:
-            score += 0.25  
-        # Condições muito ruins
+            score += 0.25
         elif avg_temp_max > 35 or avg_temp_min < 15:
-            score -= 0.30  
-        # Temperaturas fora do ideal
+            score -= 0.30
         else:
-            score -= 0.15  
+            score -= 0.15
 
-    
-    # 2. Análise de precipitação (muito importante para logística)
-    # Chuva dificulta transporte e pode afetar qualidade
-    if total_precipitation < 10:  # Pouca chuva
-        score += 0.30  # Excelente para venda (logística facilitada)
+    # 2. Análise de precipitação (logística)
+    if total_precipitation < 10:
+        score += 0.30
     elif total_precipitation < 30:
-        score += 0.10  # Aceitável
-    elif total_precipitation > 80:  # Muita chuva
-        score -= 0.35  # Aguardar (logística comprometida)
+        score += 0.10
+    elif total_precipitation > 80:
+        score -= 0.35
     elif total_precipitation > 50:
         score -= 0.20
     
-    # 3. Análise de horas de chuva (complementar)
-    if total_precip_hours > 48:  # Mais de 48h de chuva em 14 dias
-        score -= 0.15  # Período chuvoso prolongado
+    # 3. Análise de horas de chuva
+    if total_precip_hours > 48:
+        score -= 0.15
     elif total_precip_hours == 0:
-        score += 0.10  # Período seco ideal
+        score += 0.10
     
-    # 4. Análise de vento (menor peso, mas relevante para secagem)
-    if avg_windspeed > 20:  # Ventos muito fortes
-        score -= 0.10  # Pode dificultar operações
+    # 4. Análise de vento
+    if avg_windspeed > 20:
+        score -= 0.10
     elif 10 <= avg_windspeed <= 18:
-        score += 0.05  # Bom para secagem natural
+        score += 0.05
     
-    # 5. Análise do estado do café (impacta sensibilidade ao clima)
+    # 5. Estado do café
     if estado_cafe:
         estado_lower = estado_cafe.lower()
         if "verde" in estado_lower:
-            # Café verde é mais sensível à umidade durante transporte
             if total_precipitation > 30:
-                score -= 0.20  # Chuva prejudica muito café verde
+                score -= 0.20
             elif total_precipitation < 10:
-                score += 0.15  # Clima seco ideal
+                score += 0.15
         elif "torrado" in estado_lower or "moido" in estado_lower:
-            # Café processado precisa proteção absoluta contra umidade
             if total_precipitation > 20:
-                score -= 0.30  # Crítico: umidade degrada café torrado/moído rapidamente
+                score -= 0.30
             elif total_precipitation < 5:
-                score += 0.20  # Excelente para transporte de processado
+                score += 0.20
     
-    # 6. Tempo desde a colheita (urgência aumenta com tempo)
+    # 6. Tempo desde a colheita
     if data_colheita:
         try:
-            
             data_colheita_dt = datetime.strptime(data_colheita, "%Y-%m-%d")
             dias_desde_colheita = (datetime.now() - data_colheita_dt).days
             
-            if dias_desde_colheita > 180:  # Mais de 6 meses
-                score += 0.15  # Urgência: vender logo
-            elif dias_desde_colheita > 120:  # 4-6 meses
+            if dias_desde_colheita > 180:
+                score += 0.15
+            elif dias_desde_colheita > 120:
                 score += 0.10
-            elif dias_desde_colheita < 30:  # Menos de 1 mês
-                score -= 0.05  # Pode aguardar melhor momento
-        except:
+            elif dias_desde_colheita < 30:
+                score -= 0.05
+        except Exception:
+            # Caso a data venha em formato inesperado, simplesmente ignora
             pass
     
     return max(0.0, min(1.0, score))
 
 
-def analyze_price_trends(preco: dict, quantidade: float = 0, estado_cafe: str = "") -> float:
+def analyze_price_trends(
+    preco: Dict[str, Any],
+    quantidade: float = 0,
+    estado_cafe: str = "",
+) -> float:
     """
-    Analisa tendências de preço e retorna um score
-    
-    Args:
-        preco: Dicionário com dados do agente de preços contendo:
-               - preco_atual: preço atual
-               - medias_moveis_3_dias: histórico de médias móveis
-               - dias_analisados: período de análise
-        quantidade: Quantidade de sacas (1-5000)
-        estado_cafe: verde, torrado ou moido
-        
-    Returns:
-        Score indicando favorabilidade para venda
+    Analisa tendências de preço e retorna um score de favorabilidade para venda.
     """
     score = 0.5
     
     if not preco or "preco_atual" not in preco:
-        return score
+        raise ValueError("Dados de preço inválidos: 'preco_atual' não encontrado")
     
-    preco_atual = preco.get("preco_atual", 0)
+    preco_atual = preco.get("preco_atual", 0.0)
     medias_moveis = preco.get("medias_moveis_3_dias", [])
+    desvio_padrao = preco.get("desvio_padrao")
     
-    if not medias_moveis or preco_atual == 0:
-        return score
+    if preco_atual <= 0 or not medias_moveis:
+        raise ValueError("Dados de preço inválidos: 'medias_moveis_3_dias' ou 'preco_atual' não encontrados")
     
-    # Pega as últimas médias móveis para análise de tendências
-    # Últimas 10 médias = ~30 dias de análise
-    recent_averages = [m.get("media", 0) for m in medias_moveis[-10:] if m.get("media")]
+    recent_averages: List[float] = [
+        m.get("media", 0.0) for m in medias_moveis if m.get("media") is not None
+    ]
     
     if len(recent_averages) < 3:
-        return score
+        raise ValueError("Dados de preço inválidos: 'medias_moveis_3_dias' insuficientes para análise")
     
-    # 1. Comparação do preço atual com médias recentes (peso alto)
-    media_ultimos_10_periodos = sum(recent_averages) / len(recent_averages)
-    media_ultimos_5_periodos = sum(recent_averages[-5:]) / len(recent_averages[-5:])
-    media_ultimos_3_periodos = sum(recent_averages[-3:]) / len(recent_averages[-3:])
+    # Médias em diferentes janelas
+    media_geral = _safe_mean(recent_averages, preco_atual)
+    media_ultimos_30 = _safe_mean(recent_averages[-30:], media_geral)
+    media_ultimos_15 = _safe_mean(recent_averages[-15:], media_geral)
+    media_ultimos_7 = _safe_mean(recent_averages[-7:], media_geral)
     
-    # Se preço atual está acima das médias = bom momento para vender
-    variacao_vs_media_10 = (preco_atual - media_ultimos_10_periodos) / media_ultimos_10_periodos
-    variacao_vs_media_5 = (preco_atual - media_ultimos_5_periodos) / media_ultimos_5_periodos
-    variacao_vs_media_3 = (preco_atual - media_ultimos_3_periodos) / media_ultimos_3_periodos
+    if media_geral == 0:
+        # Evita divisão por zero; se isso acontecer algo está muito incoerente nos dados
+        return max(0.0, min(1.0, score))
     
-    # Preço atual acima das médias = VENDER
-    if variacao_vs_media_10 > 0.05:  # 5% acima da média de 30 dias
+    # 1. Comparação do preço atual com médias
+    variacao_vs_media_geral = (preco_atual - media_geral) / media_geral
+    variacao_vs_media_30 = (preco_atual - media_ultimos_30) / media_ultimos_30 if media_ultimos_30 else 0
+    variacao_vs_media_15 = (preco_atual - media_ultimos_15) / media_ultimos_15 if media_ultimos_15 else 0
+    variacao_vs_media_7 = (preco_atual - media_ultimos_7) / media_ultimos_7 if media_ultimos_7 else 0
+    
+    if variacao_vs_media_geral > 0.05:
         score += 0.20
-    elif variacao_vs_media_10 < -0.05:  # 5% abaixo
+    elif variacao_vs_media_geral < -0.05:
         score -= 0.15
     
-    if variacao_vs_media_5 > 0.03:  # 3% acima da média de 15 dias
+    if variacao_vs_media_30 > 0.03:
         score += 0.15
-    elif variacao_vs_media_5 < -0.03:
+    elif variacao_vs_media_30 < -0.03:
         score -= 0.10
     
-    # 2. Análise de tendência (preços subindo ou caindo?)
-    # Compara primeiros 3 períodos com últimos 3 períodos
-    if len(recent_averages) >= 6:
-        media_inicio = sum(recent_averages[:3]) / 3
-        media_fim = sum(recent_averages[-3:]) / 3
-        tendencia = (media_fim - media_inicio) / media_inicio
+    # 2. Tendência de longo prazo (90 dias -> compara 30 iniciais com 30 finais)
+    if len(recent_averages) >= 60:
+        media_primeiro_mes = _safe_mean(recent_averages[:30])
+        media_ultimo_mes = _safe_mean(recent_averages[-30:])
         
-        if tendencia > 0.10:  # Tendência de alta > 10%
-            # Preços subindo = pode valer aguardar mais um pouco
-            score -= 0.15
-        elif tendencia < -0.10:  # Tendência de queda > 10%
-            # Preços caindo = VENDER antes que caia mais
-            score += 0.25
-        elif -0.05 < tendencia < 0.05:  # Estável
-            # Mercado estável = analisar outros fatores
+        if media_primeiro_mes:
+            tendencia_longo_prazo = (media_ultimo_mes - media_primeiro_mes) / media_primeiro_mes
+        else:
+            tendencia_longo_prazo = 0
+        
+        if tendencia_longo_prazo > 0.15:
+            score -= 0.20
+        elif tendencia_longo_prazo < -0.15:
+            score += 0.30
+        elif -0.08 < tendencia_longo_prazo < 0.08:
             score += 0.05
     
-    # 3. Volatilidade recente (últimos 5 períodos)
-    if len(recent_averages) >= 5:
-        volatilidade = max(recent_averages[-5:]) - min(recent_averages[-5:])
-        volatilidade_percentual = volatilidade / media_ultimos_5_periodos
+    # Tendência de curto prazo (últimos 15 dias)
+    if len(recent_averages) >= 15:
+        base_curto = _safe_mean(recent_averages[-15:-8], media_ultimos_7)
+        if base_curto:
+            tendencia_curto_prazo = (media_ultimos_7 - base_curto) / base_curto
+        else:
+            tendencia_curto_prazo = 0
         
-        if volatilidade_percentual > 0.15:  # Alta volatilidade (>15%)
-            # Mercado instável = se preço está bom, VENDER
-            if variacao_vs_media_3 > 0:
+        if tendencia_curto_prazo > 0.10:
+            score -= 0.15
+        elif tendencia_curto_prazo < -0.10:
+            score += 0.25
+    
+    # 3. Volatilidade (últimos 30 dias)
+    if len(recent_averages) >= 30:
+        janela_30 = recent_averages[-30:]
+        volatilidade = max(janela_30) - min(janela_30)
+        volatilidade_percentual = volatilidade / media_ultimos_30 if media_ultimos_30 else 0
+        
+        if volatilidade_percentual > 0.20:
+            if variacao_vs_media_7 > 0:
                 score += 0.15
             else:
                 score -= 0.10
+        elif volatilidade_percentual < 0.08 and variacao_vs_media_30 > 0.05:
+            score += 0.10
     
-    # 4. Momentum de curto prazo (últimos 3 períodos)
-    if len(recent_averages) >= 3:
-        # Verifica se está acelerando pra cima ou pra baixo
-        diff_1 = recent_averages[-1] - recent_averages[-2]
-        diff_2 = recent_averages[-2] - recent_averages[-3]
+    # 4. Momentum de curto prazo (últimos 7 dias)
+    if len(recent_averages) >= 7:
+        diff_recente = recent_averages[-1] - recent_averages[-4]
+        diff_anterior = recent_averages[-4] - recent_averages[-7]
         
-        if diff_1 > 0 and diff_2 > 0 and diff_1 > diff_2:  # Acelerando pra cima
-            score -= 0.10  # Pode subir mais, aguardar
-        elif diff_1 < 0 and diff_2 < 0 and abs(diff_1) > abs(diff_2):  # Acelerando pra baixo
-            score += 0.15  # Vender antes que caia mais
+        if diff_recente > 0 and diff_anterior > 0 and diff_recente > diff_anterior * 1.2:
+            score -= 0.10
+        elif diff_recente < 0 and diff_anterior < 0 and abs(diff_recente) > abs(diff_anterior) * 1.2:
+            score += 0.15
     
-    # 5. Análise da quantidade (volumes diferentes têm estratégias diferentes)
+    # 5. Análise baseada no desvio padrão
+    if desvio_padrao is not None and desvio_padrao > 0:
+        z_score = (preco_atual - media_geral) / desvio_padrao
+        
+        if z_score > 1.5:
+            score += 0.20
+        elif z_score > 1.0:
+            score += 0.15
+        elif z_score < -1.5:
+            score -= 0.20
+        elif z_score < -1.0:
+            score -= 0.15
+        
+        coeficiente_variacao = desvio_padrao / media_geral
+        
+        if coeficiente_variacao > 0.15 and z_score > 0.5:
+            score += 0.10
+        elif coeficiente_variacao < 0.05 and variacao_vs_media_30 > 0.02:
+            score += 0.08
+    
+    # 6. Análise da quantidade
     if quantidade > 0:
-        if quantidade >= 1000:  # Grande volume (1000-5000 sacas)
-            # Grande volume: aproveitar preço bom, difícil vender tudo em queda
-            if variacao_vs_media_5 > 0.03:
-                score += 0.15  # Preço bom + volume alto = vender
-            elif variacao_vs_media_5 < -0.03:
-                score -= 0.10  # Preço ruim + volume alto = difícil escoar
-        elif quantidade >= 500:  # Volume médio (500-999 sacas)
-            if variacao_vs_media_5 > 0:
-                score += 0.08  # Preço acima da média = bom momento
-        elif quantidade < 100:  # Volume pequeno (1-99 sacas)
-            # Pequeno volume = flexibilidade, pode aguardar melhor preço
-            if tendencia > 0.05:  # Se preços subindo
-                score -= 0.10  # Aguardar mais
+        if quantidade >= 1000:
+            if variacao_vs_media_30 > 0.03:
+                score += 0.15
+            elif variacao_vs_media_30 < -0.03:
+                score -= 0.10
+        elif quantidade >= 500:
+            if variacao_vs_media_30 > 0:
+                score += 0.08
+        elif quantidade < 100 and len(recent_averages) >= 60:
+            media_primeiro_mes = _safe_mean(recent_averages[:30])
+            media_ultimo_mes = _safe_mean(recent_averages[-30:])
+            if media_primeiro_mes:
+                tendencia_geral = (media_ultimo_mes - media_primeiro_mes) / media_primeiro_mes
+            else:
+                tendencia_geral = 0
+            if tendencia_geral > 0.05:
+                score -= 0.10
     
-    # 6. Estado do café afeta valor e urgência
+    # 7. Estado do café
     if estado_cafe:
         estado_lower = estado_cafe.lower()
         if "torrado" in estado_lower or "moido" in estado_lower:
-            # Café processado: maior valor agregado mas prazo de validade menor
-            score += 0.15  # Urgência para vender antes de perder qualidade
-            if variacao_vs_media_3 > 0.05:  # Se preço está 5% acima
-                score += 0.10  # Momento excelente
-        elif "verde" in estado_lower:
-            # Café verde: mais estável, pode aguardar melhor momento
-            if tendencia > 0.08:  # Tendência forte de alta
-                score -= 0.08  # Pode esperar valorizar mais
+            score += 0.15
+            if variacao_vs_media_7 > 0.05:
+                score += 0.10
+        elif "verde" in estado_lower and len(recent_averages) >= 30:
+            media_15_dias_atras = _safe_mean(recent_averages[-30:-15])
+            media_ultimos_15_dias = _safe_mean(recent_averages[-15:])
+            if media_15_dias_atras:
+                tendencia_recente = (media_ultimos_15_dias - media_15_dias_atras) / media_15_dias_atras
+            else:
+                tendencia_recente = 0
+            if tendencia_recente > 0.08:
+                score -= 0.08
     
     return max(0.0, min(1.0, score))
 
 
-def analyze_market_reports(relatorios: list, estado_cafe: str = "", tipo_cafe: str = "") -> float:
+def analyze_market_reports(
+    relatorios: List[Dict[str, Any]],
+    estado_cafe: str = "",
+    tipo_cafe: str = "",
+) -> float:
     """
-    Analisa relatórios de mercado via RAG e retorna um score
-    
-    Args:
-        relatorios: Lista de relatórios do RAG
-        estado_cafe: verde, torrado ou moido
-        tipo_cafe: arabica ou robusta
-        
-    Returns:
-        Score entre 0.0 e 1.0 indicando favorabilidade para venda
+    Analisa relatórios de mercado via RAG e retorna um score.
     """
     score = 0.5
     
     if not relatorios:
         return score
     
-    # Análise das recomendações
     positive_keywords = ["vender", "alta", "crescimento", "valorização", "positivo", "boa", "favorável"]
     negative_keywords = ["aguardar", "queda", "baixa", "desvalorização", "negativo", "risco", "desfavorável"]
     
-    # Combina todo o texto dos relatórios
-    all_text = " ".join([
-        rel.get("content", "") + " " + str(rel.get("metadata", {}))
+    all_text = " ".join(
+        f"{rel.get('content', '')} {rel.get('metadata', {})}"
         for rel in relatorios
-    ]).lower()
+    ).lower()
     
     positive_count = sum(1 for keyword in positive_keywords if keyword in all_text)
     negative_count = sum(1 for keyword in negative_keywords if keyword in all_text)
@@ -288,78 +315,53 @@ def analyze_market_reports(relatorios: list, estado_cafe: str = "", tipo_cafe: s
     elif negative_count > positive_count:
         score -= 0.3
     
-    # Análise específica por estado do café
     if estado_cafe:
         estado_lower = estado_cafe.lower()
         if "torrado" in estado_lower or "moido" in estado_lower:
-                # Relatórios sobre café processado são relevantes
-                if positive_count > negative_count:
-                    score += 0.10
+            if positive_count > negative_count:
+                score += 0.10
         if "verde" in all_text or "cru" in all_text:
-            if "verde" in estado_lower:
-                # Relatórios sobre café verde/cru
-                if positive_count > negative_count:
-                    score += 0.10
+            if "verde" in estado_lower and positive_count > negative_count:
+                score += 0.10
     
     return max(0.0, min(1.0, score))
 
 
-def calculate_decision_score(climate_score: float, price_score: float, market_score: float) -> float:
+def calculate_decision_score(
+    climate_score: float,
+    price_score: float,
+    market_score: float,
+) -> float:
     """
-    Calcula score final da decisão baseado nos pesos
-    
-    Pesos:
-    - climate: 0.35 (35%)
-    - price_trend: 0.40 (40%)
-    - market_reports: 0.25 (25%)
-    
-    Args:
-        climate_score: Score climático
-        price_score: Score de preços
-        market_score: Score de mercado
-        
-    Returns:
-        Score final entre 0.0 e 1.0
+    Calcula score final da decisão baseado nos pesos definidos.
     """
     decision_weights = {
         "climate": 0.35,
         "price_trend": 0.40,
-        "market_reports": 0.25
+        "market_reports": 0.25,
     }
     
     total_score = (
-        climate_score * decision_weights["climate"] +
-        price_score * decision_weights["price_trend"] +
-        market_score * decision_weights["market_reports"]
+        climate_score * decision_weights["climate"]
+        + price_score * decision_weights["price_trend"]
+        + market_score * decision_weights["market_reports"]
     )
     return round(total_score, 3)
 
 
-def build_ai_prompt(payload: dict, clima: dict, preco: dict, relatorios: list, 
-                   climate_score: float, price_score: float, market_score: float,
-                   decision_score: float, decision: str) -> str:
+def build_ai_prompt(
+    payload: Dict[str, Any],
+    clima: Dict[str, Any],
+    preco: Dict[str, Any],
+    relatorios: List[Dict[str, Any]],
+    climate_score: float,
+    price_score: float,
+    market_score: float,
+    decision_score: float,
+    decision: str,
+) -> str:
     """
-    Constrói prompt para explicação da decisão tomada pelo agente
-    
-    Este prompt inclui:
-    1. Decisão tomada pelo agente
-    2. Dados estruturados (preço e clima)
-    3. Scores calculados pelo agente
-    4. Relatórios técnicos como contexto
-    
-    Args:
-        payload: Dados da requisição original
-        clima: Dados climáticos
-        preco: Dados de preços
-        relatorios: Relatórios do RAG
-        climate_score: Score climático calculado
-        price_score: Score de preços calculado
-        market_score: Score de mercado calculado
-        decision_score: Score final da decisão
-        decision: Decisão final ("vender" ou "aguardar")
-        
-    Returns:
-        String com o prompt formatado
+    Constrói prompt para explicação da decisão tomada pelo agente.
     """
     tipo_cafe = payload.get("tipo_cafe", "")
     cidade = payload.get("cidade", "")
@@ -382,7 +384,7 @@ def build_ai_prompt(payload: dict, clima: dict, preco: dict, relatorios: list,
 
         **ANÁLISE QUANTITATIVA:**
         - Score Climático: {climate_score:.3f} (peso 35%)
-        - Score de Preços: {price_score:.3f} (peso 40%)  
+        - Score de Preços: {price_score:.3f} (peso 40%)
         - Score de Mercado: {market_score:.3f} (peso 25%)
         - **Score Final: {decision_score:.3f}** → Limiar: 0.5 para VENDER
 
@@ -390,7 +392,7 @@ def build_ai_prompt(payload: dict, clima: dict, preco: dict, relatorios: list,
 
         ### DADOS QUE FUNDAMENTARAM A DECISÃO
 
-        **DADOS CLIMÁTICOS (próximos 14 dias):**
+        **DADOS CLIMÁTICOS:**
         {clima}
 
         **DADOS DE PREÇOS:**
