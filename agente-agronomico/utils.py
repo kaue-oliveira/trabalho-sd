@@ -91,7 +91,7 @@ async def solicitar_decisao_ollama_async(payload: dict):
     
     # Análise quantitativa usando funções do agente agronômico
     climate_score = analyze_climate_factors(clima, tipo_cafe, estado_cafe, data_colheita)
-    price_score = analyze_price_trends(preco, quantidade, estado_cafe)
+    price_score = analyze_price_trends(preco, quantidade, estado_cafe, data_colheita)
     market_score = analyze_market_reports(relatorios, estado_cafe, tipo_cafe)
     
     # Calcula score final e toma a decisão final
