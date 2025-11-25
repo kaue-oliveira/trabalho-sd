@@ -75,18 +75,14 @@
 
     Validação de identidade dos usuários através de tokens JWT no API Gateway. Garante que apenas usuários autenticados possam acessar os serviços.
 
-- #### Rate Limiting (IMPLEMENTAR)
+- #### Rate Limiting (IMPLEMENTADO)
 
     Limitação de requisições por usuário/IP no API Gateway. Protege contra DDoS, abuso de API e ataques de brute force.
-
-- #### Autorização de API (IMPLEMENTAR)
-
-    Controle de permissões e escopos no API Gateway. Impede acesso a recursos não permitidos e garante isolamento entre dados de usuários.
 
 - #### Sanitização de Dados (IMPLEMENTAR)
 
     Filtragem e validação de inputs no API Gateway. Protege contra SQL Injection, XSS e injeção de dados em análises.
 
-- #### Load Balancer no Gateway (IMPLEMENTAR)
+- #### Load Balancer no Gateway (IMPLEMENTADO)
 
     Implementação de um mecanismo de balanceamento de carga no próprio Gateway, distribuindo requisições entre múltiplas instâncias e reduzindo o impacto de ataques DDoS e sobrecarga.

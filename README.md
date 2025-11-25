@@ -80,12 +80,11 @@ O resultado final é uma **análise explicável**, entregue de forma integrada e
 
 ## 5. 🚀 Funcionalidades Principais
 
-- 🌤️ **Coleta climática automática** via APIs (Open-Meteo, OpenWeatherMap, INMET, etc.)  
-- 💰 **Coleta de preços** da saca de café (CEPEA, B3, ICO)  
-- 🌱 **Análise agronômica integrada**, considerando clima, solo e produtividade  
-- 🧾 **Geração de recomendações textuais explicáveis**, como:  
-  *"Recomenda-se aguardar duas semanas antes da venda devido à previsão de estiagem e alta de preços."*  
-- 🗄️ **Armazenamento histórico** de clima, preços e relatórios técnicos  
+- 🌤️ **Coleta climática automática** via API (Open-Meteo)  
+- 💰 **Coleta de preços** da saca de café (CEPEA)  
+- 🌱 **Análise agronômica integrada**, considerando clima, preços e relatórios técnicos  
+- 🧾 **Geração de recomendações textuais explicáveis** 
+- 🗄️ **Armazenamento histórico** de usuários e análises
 - ⚙️ **Arquitetura modular e distribuída**, com cada agente containerizado em Docker  
 
 ---
@@ -94,21 +93,13 @@ O resultado final é uma **análise explicável**, entregue de forma integrada e
 
 ### 6.1. Arquitetura Pré-Modelagem de Ameaças
 
-A arquitetura inicial foi projetada como **orientada a microserviços** para funcionar de forma **distribuída e orquestrada via REST**. Cada agente atua de maneira independente, mas integrada através de um **API Gateway**, que realiza o **roteamento, autenticação e comunicação entre os serviços**.
+A arquitetura inicial foi projetada como **orientada a microserviços** para funcionar de forma **distribuída e orquestrada via REST**. Cada agente atua de maneira independente, mas integrada através de um **API Gateway**, que realiza o **roteamento e comunicação entre os serviços**.
 
-![Arquitetura Inicial do Sistema](DiagramasSD-Arquitetura.drawio.png)
+![Arquitetura Inicial do Sistema](./diagramas/DiagramasSD-Arquitetura_PreModelagem.drawio.png)
 
 ### 6.2. 🔒 Modelagem de Ameaças
 
-Para garantir a segurança do sistema, foi realizada uma análise detalhada de ameaças seguindo a metodologia STRIDE. [Clique aqui para acessar a Modelagem de Ameaças completa](Modelagem-de-Ameaça.md)
-
-**Principais ameaças identificadas e mitigadas:**
-- Spoofing de identidade nos serviços
-- Tampering de dados em trânsito e armazenamento
-- Repúdio em transações críticas
-- Divulgação de informações sensíveis
-- Negação de serviço
-- Elevação de privilégio
+Para garantir a segurança do sistema, foi realizada uma análise detalhada de ameaças seguindo a metodologia STRIDE. [Clique aqui para acessar a Modelagem de Ameaças completa](./modelagem_ameacas/modelagem_ameacas.md)
 
 ### 6.3. Arquitetura Pós-Modelagem de Ameaças
 
@@ -116,7 +107,9 @@ Após a análise de segurança, a arquitetura foi reforçada com:
 
 - **Autenticação JWT** com refresh tokens
 - **Rate limiting** no API Gateway
-- **Validação de entrada** em todos os endpoints
+- **Load balancer** no API Gateway
+
+![Arquitetura Final do Sistema](./diagramas/DiagramasSD-Arquitetura_PosModelagem.drawio.png)
 
 ---
 
@@ -130,44 +123,38 @@ Essa abordagem reflete um modelo **orientado à responsabilidade funcional**, em
 
 | **Componente** | **Responsabilidade Principal** |
 |----------------|--------------------------------|
-| 👨‍🌾 **Usuário / WebUI** | Interface de acesso usada por cooperativas e produtores. Envia requisições e exibe resultados. |
-| 🚪 **API Gateway** | Ponto único de entrada e roteamento. Gerencia autenticação, controle de acesso e redireciona requisições REST entre agentes. |
-| 🌱 **Agente Agronômico** | Atua como **núcleo lógico de decisão**. Recebe solicitações via Gateway, requisita dados dos agentes de clima e preço (por meio do Gateway), integra os resultados e aplica análise preditiva. |
-| 🌤️ **Agente Climático** | Consome APIs meteorológicas (Open-Meteo, INMET, WeatherAPI), processa e retorna dados estruturados sobre temperatura, precipitação e umidade. |
-| 💰 **Agente de Preço do Café** | Realiza scraping na fonte CEPEA, retornando dados de preço dos últimos 90 dias. |
-| 🧠 **Serviço Ollama (LLM Local)** | Modelo de linguagem local (Ollama) executado em container, responsável por gerar textos explicativos com base na análise do Agente Agronômico. |
-| 🗄️ **Banco de Dados / Storage** | Armazena históricos climáticos, econômicos e relatórios técnicos. |
-| 🌎 **Fontes Externas** | APIs e sites públicos de clima e mercado de commodities. |
+| 👨‍🌾 **Usuário / WebUI** | Interface de acesso usada por usuários. Envia requisições e exibe resultados. |
+| ⚖️ **Load Balancer** | Distribuição inteligente de carga e failover automático entre instâncias. |
+| 🚪 **API Gateway** | Ponto único de entrada e roteamento. Gerencia autenticação e redireciona requisições REST entre agentes. |
+| 🌱 **Agente Agronômico** | Atua como **núcleo lógico de decisão**. Recebe solicitações via Gateway, requisita relatórios do RAG e dados dos agentes de clima e preço (por meio do Gateway), integra os resultados e decide recomendações. |
+| 🔍 **Serviço RAG** | Busca semântica em documentos agronômicos via Banco Vetorial. |
+| 💾 **Serviço de Dados** | Autenticação, CRUD de usuários e gerenciamento de histórico de análises. |
+| 🌤️ **Agente Climático** | Consome API meteorológica (Open-Meteo), processa e retorna dados estruturados sobre temperatura, precipitação, umidade e intensidade do vento. |
+| 💰 **Agente de Preço do Café** | Realiza scraping na fonte CEPEA, processa e retorna dados de preço dos últimos 90 dias. |
+| 🧠 **Serviço Ollama (LLM Local)** | Modelo de linguagem local (Ollama) executado em container, responsável por gerar textos explicativos com base no contexto do Agente Agronômico. |
+| 🗄️ **Banco de Dados** | Armazena análises e dados do usuário. |
+| 🧩 **Banco Vetorial RAG** | Armazena embeddings de documentos técnicos. |
 
 ### 7.2. Comunicação e Integração
 
 A integração entre os agentes ocorre via **API Gateway**, utilizando o protocolo **HTTP REST** e mensagens **JSON padronizadas**.
 
-O **Gateway** centraliza a comunicação e executa funções de:
-- Autenticação e autorização  
+O **Gateway** centraliza a comunicação e executa funções de:  
 - Controle de requisições  
 - Encaminhamento entre serviços  
-- Balanceamento e segurança  
+- Balanceamento e segurança
 
 **Vantagens dessa abordagem:**
 - Baixo acoplamento entre serviços  
-- Escalabilidade horizontal  
+- Escalabilidade horizontal
 - Independência de desenvolvimento e deploy  
 - Facilita o monitoramento e logging centralizado  
 
-### 7.3. Fluxo de Execução
 
-1. O **usuário** envia uma solicitação via WebUI, encaminhada ao **API Gateway**  
-2. O **Gateway** direciona a requisição ao **Agente Agronômico**  
-3. O **Agente Agronômico**, por meio do Gateway, requisita dados aos agentes de **Clima** e **Preço do Café**  
-4. Após o retorno das informações, o **Agente Agronômico** integra os dados e solicita ao **Ollama** a geração de um texto explicativo  
-5. O resultado é armazenado no **Banco de Dados** e retornado ao **usuário** via Gateway
-
-### 7.4. Justificativa Técnica
+### 7.3. Justificativa Técnica
 
 - **Microserviços containerizados:** garantem isolamento, escalabilidade e facilidade de implantação  
-- **Gateway como mediador:** centraliza segurança, controle e comunicação entre agentes  
-- **Agente Agronômico como núcleo lógico:** concentra a análise, sem acoplamento direto aos demais serviços  
+- **Gateway como mediador:** centraliza segurança, controle e comunicação entre agentes   
 - **Modelo de IA local (Ollama):** atende ao requisito de conter um modelo de IA local containerizado  
 - **REST + JSON:** formato padrão, interoperável e simples de integrar  
 - **Facilidade de expansão:** novos agentes (por exemplo, de solo ou pragas) podem ser adicionados sem refatorar o sistema principal
@@ -179,8 +166,6 @@ O **Gateway** centraliza a comunicação e executa funções de:
 - Autenticação e autorização via tokens JWT no Gateway
 - Sanitização e validação de entradas de usuário  
 - Rate limiting para prevenção de DDoS  
-- Logs de auditoria para todas as operações críticas  
-- Backup automático dos dados históricos
 
 ---
 
