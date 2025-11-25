@@ -147,7 +147,6 @@ Essa dor se desdobra em problemas reais identificados:
 
 - Dados climáticos estão espalhados entre INMET, Open-Meteo, institutos regionais e previsões globais.  
 - Dados de preço estão fragmentados em CEPEA, B3, ICO e relatórios diversos.  
-- Produtores não possuem tempo, conhecimento técnico ou estrutura para correlacionar essas informações.  
 - A instabilidade climática recente tornou a tomada de decisão muito arriscada.  
 - Erros de timing na venda resultam em perda financeira significativa.  
 - Pequenos produtores sofrem ainda mais pela falta de acesso a análise técnica.
