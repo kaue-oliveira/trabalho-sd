@@ -123,15 +123,13 @@ async def solicitar_decisao_ollama_async(payload: dict):
                 "model": "phi3:mini",
                 "prompt": prompt,
                 "stream": False,
-                "format": "json"
+                "num_predict": 200
             }
         )
         duration = time.perf_counter() - start
         r.raise_for_status()
 
-        raw = r.json().get("response", "")
-        ollama_response = json.loads(raw)
-        explicacao = ollama_response.get("explicacao", "")
+        explicacao = r.json().get("response", "")
         
         return {
             "decisao": decision_final,  # SEMPRE a decisão do agente
