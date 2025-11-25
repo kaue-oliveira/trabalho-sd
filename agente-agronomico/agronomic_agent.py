@@ -562,11 +562,7 @@ def build_ai_prompt(
         - Preços precisos (R$ {preco_atual:.2f})
         - Variações percentuais ({variacao_vs_media:+.1f}%)
 
-        Responda APENAS este JSON:
 
-        {{
-        "decisao": "{decision}",
-        "explicacao": "Explicação técnica em 150-180 palavras focando 80% em clima e preço. Use números específicos: temp {avg_temp_max_7:.1f}°C, precip {total_precip_7:.1f}mm, preço R$ {preco_atual:.2f}, variação {variacao_vs_media:+.1f}%, tendência {tendencia_curta}."
-        }}
+        Faça uma Explicação técnica em 150-180 palavras focando 80% em clima e preço. Use números específicos: temp {avg_temp_max_7:.1f}°C, precip {total_precip_7:.1f}mm, preço R$ {preco_atual:.2f}, variação {variacao_vs_media:+.1f}%, tendência {tendencia_curta}.
         """
     return prompt.strip()
