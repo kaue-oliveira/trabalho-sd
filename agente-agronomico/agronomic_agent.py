@@ -362,6 +362,7 @@ def build_ai_prompt(
 ) -> str:
     """
     Constrói prompt para explicação da decisão tomada pelo agente.
+    Foco principal em dados climáticos e de preço, relatórios como contexto auxiliar.
     """
     tipo_cafe = payload.get("tipo_cafe", "")
     cidade = payload.get("cidade", "")
@@ -369,6 +370,46 @@ def build_ai_prompt(
     data_colheita = payload.get("data_colheita", "")
     quantidade = payload.get("quantidade", 0)
     estado_cafe = payload.get("estado_cafe", "")
+    
+    # Extrair dados climáticos relevantes
+    forecast = clima.get("daily_forecast", [])
+    next_days = forecast[:14] if forecast else []
+    
+    # Calcular métricas climáticas
+    if next_days:
+        temps_max = [day.get("temperature_2m_max", 0) for day in next_days]
+        temps_min = [day.get("temperature_2m_min", 0) for day in next_days]
+        precips = [day.get("precipitation_sum", 0) for day in next_days]
+        winds = [day.get("windspeed_10m_max", 0) for day in next_days]
+        
+        avg_temp_max = sum(temps_max) / len(temps_max) if temps_max else 0
+        avg_temp_min = sum(temps_min) / len(temps_min) if temps_min else 0
+        total_precip = sum(precips)
+        avg_wind = sum(winds) / len(winds) if winds else 0
+        precip_days = sum(1 for p in precips if p > 0)
+    else:
+        avg_temp_max = avg_temp_min = total_precip = avg_wind = precip_days = 0
+    
+    # Extrair dados de preço relevantes
+    preco_atual = preco.get("preco_atual", 0)
+    medias_moveis = preco.get("medias_moveis_3_dias", [])
+    
+    # Calcular tendência de preço
+    if len(medias_moveis) >= 2:
+        media_recente = medias_moveis[-1].get("media", 0) if medias_moveis else 0
+        media_anterior = medias_moveis[-2].get("media", 0) if len(medias_moveis) >= 2 else 0
+        tendencia_preco = "alta" if media_recente > media_anterior else "baixa" if media_recente < media_anterior else "estável"
+    else:
+        tendencia_preco = "indeterminada"
+    
+    # Extrair insights relevantes dos relatórios (apenas se muito relevantes)
+    insights_relatorios = []
+    if relatorios:
+        for rel in relatorios[:2]:  # Limitar a 2 relatórios mais relevantes
+            content = rel.get("content", "")
+            # Buscar menções específicas ao tipo de café ou região
+            if tipo_cafe.lower() in content.lower() or estado.lower() in content.lower():
+                insights_relatorios.append(content[:200] + "...")  # Limitar tamanho
     
     prompt = f"""
         Você é um especialista em cafeicultura e comercialização de café.
@@ -384,45 +425,51 @@ def build_ai_prompt(
 
         **ANÁLISE QUANTITATIVA:**
         - Score Climático: {climate_score:.3f} (peso 35%)
-        - Score de Preços: {price_score:.3f} (peso 40%)
+        - Score de Preços: {price_score:.3f} (peso 40%) 
         - Score de Mercado: {market_score:.3f} (peso 25%)
         - **Score Final: {decision_score:.3f}** → Limiar: 0.5 para VENDER
 
         ---
 
-        ### DADOS QUE FUNDAMENTARAM A DECISÃO
+        ### DADOS PRINCIPAIS QUE FUNDAMENTARAM A DECISÃO
 
-        **DADOS CLIMÁTICOS:**
-        {clima}
+        **CONDIÇÕES CLIMÁTICAS (Próximos 14 dias - {cidade}, {estado}):**
+        - Temperatura máxima média: {avg_temp_max:.1f}°C
+        - Temperatura mínima média: {avg_temp_min:.1f}°C  
+        - Precipitação total: {total_precip:.1f}mm
+        - Dias com chuva: {precip_days} dias
+        - Velocidade média do vento: {avg_wind:.1f}km/h
 
-        **DADOS DE PREÇOS:**
-        {preco}
+        **TENDÊNCIAS DE PREÇO ({tipo_cafe.title()}):**
+        - Preço atual: R$ {preco_atual:.2f}
+        - Tendência recente: {tendencia_preco}
+        - Médias móveis analisadas: {len(medias_moveis)} períodos
 
         **INFORMAÇÕES DO CAFÉ:**
         - Tipo: {tipo_cafe}
-        - Localização: {cidade}, {estado}
-        - Data de colheita: {data_colheita}
-        - Quantidade: {quantidade} sacas
         - Estado: {estado_cafe}
+        - Quantidade: {quantidade} sacas
+        - Data de colheita: {data_colheita}
 
-        **RELATÓRIOS TÉCNICOS (contexto adicional):**
-        {relatorios}
+        **CONTEXTO ADICIONAL (Relatórios):**
+        {'- ' + ' | '.join(insights_relatorios) if insights_relatorios else 'Nenhum insight relevante dos relatórios para esta decisão específica.'}
 
         ---
 
-        Sua tarefa é explicar por que a decisão de **{decision.upper()}** é apropriada baseada nos dados acima.
+        Sua tarefa é explicar por que a decisão de **{decision.upper()}** é apropriada BASEANDO-SE PRINCIPALMENTE NOS DADOS CLIMÁTICOS E DE PREÇO.
 
-        Considere na explicação:
-        1. Como as condições climáticas dos próximos 14 dias influenciam
-        2. O que as tendências de preço indicam
-        3. O estado atual do café e logística
-        4. Insights relevantes dos relatórios técnicos
+        ESTRUTURE SUA EXPLICAÇÃO COM:
+        1. **Análise Climática**: Como as condições dos próximos 14 dias afetam a qualidade, logística e momento ideal para venda
+        2. **Análise de Preços**: O que a tendência de preços indica sobre o momento de mercado
+        3. **Considerações Complementares**: Apenas se relevante, mencione brevemente insights dos relatórios
+
+        Seja específico com os números: cite temperaturas, precipitação, preços concretos.
 
         Responda APENAS este JSON:
 
         {{
         "decisao": "{decision}",
-        "explicacao": "Explicação detalhada em até 150 palavras justificando por que {decision.upper()} é a decisão correta. Cite números específicos dos dados climáticos e de preços."
+        "explicacao": "Explicação técnica em 120-150 palavras focando em dados climáticos e de preço. Use números específicos: temperatura {avg_temp_max:.1f}°C, precipitação {total_precip:.1f}mm, preço R$ {preco_atual:.2f}, etc."
         }}
         """
     return prompt.strip()
