@@ -140,7 +140,7 @@ async def atualizar_usuario(user_data: dict, token_payload: dict = Depends(verif
     Retorna os dados atualizados do usuário.
     O usuário só pode atualizar seus próprios dados.
     """
-    user_id = int(token_payload.get("sub"))
+    user_id = token_payload.get("user_id")
     try:
         resp = await data_client.put(f"/usuarios/{user_id}", json=user_data)
         resp.raise_for_status()
@@ -159,7 +159,7 @@ async def deletar_usuario(token_payload: dict = Depends(verify_token), data_clie
     Esta ação é irreversível e remove todos os dados do usuário.
     O usuário só pode deletar sua própria conta.
     """
-    user_id = int(token_payload.get("sub"))
+    user_id = token_payload.get("user_id")
     try:
         resp = await data_client.delete(f"/usuarios/{user_id}")
         resp.raise_for_status()

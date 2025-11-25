@@ -81,7 +81,7 @@ async def listar_analises(payload: dict = Depends(verify_token), data_client: ht
     Retorna um histórico completo das análises realizadas
     pelo usuário atual, ordenadas por data de análise.
     """
-    user_id = int(payload.get("sub"))
+    user_id = payload.get("user_id")
     try:
         resp = await data_client.get(f"/analises/usuario/{user_id}")
         resp.raise_for_status()
@@ -109,7 +109,7 @@ async def criar_analise(analise_data: dict, payload: dict = Depends(verify_token
     
     Retorna os dados da análise criada com ID gerado.
     """
-    user_id = int(payload.get("sub"))
+    user_id = payload.get("user_id")
     analise_payload = { **analise_data, "usuario_id": user_id }
     try:
         resp = await data_client.post("/analises", json=analise_payload)
