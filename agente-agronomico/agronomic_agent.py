@@ -362,6 +362,7 @@ def build_ai_prompt(
 ) -> str:
     """
     Constrói prompt para explicação da decisão tomada pelo agente.
+    Foco principal em dados climáticos e de preço, relatórios como contexto auxiliar.
     """
     tipo_cafe = payload.get("tipo_cafe", "")
     cidade = payload.get("cidade", "")
@@ -369,6 +370,109 @@ def build_ai_prompt(
     data_colheita = payload.get("data_colheita", "")
     quantidade = payload.get("quantidade", 0)
     estado_cafe = payload.get("estado_cafe", "")
+    
+    # Extrair dados climáticos relevantes
+    forecast = clima.get("daily_forecast", [])
+    next_days = forecast[:14] if forecast else []
+    
+    # Calcular métricas climáticas detalhadas
+    if next_days:
+        temps_max = [day.get("temperature_2m_max", 0) for day in next_days]
+        temps_min = [day.get("temperature_2m_min", 0) for day in next_days]
+        precips = [day.get("precipitation_sum", 0) for day in next_days]
+        winds = [day.get("windspeed_10m_max", 0) for day in next_days]
+        precip_hours = [day.get("precipitation_hours", 0) for day in next_days]
+        
+        # Métricas gerais dos 14 dias
+        avg_temp_max = sum(temps_max) / len(temps_max) if temps_max else 0
+        avg_temp_min = sum(temps_min) / len(temps_min) if temps_min else 0
+        total_precip = sum(precips)
+        avg_wind = sum(winds) / len(winds) if winds else 0
+        precip_days = sum(1 for p in precips if p > 0)
+        total_precip_hours = sum(precip_hours)
+        
+        # Dados dos últimos 7 dias (mais relevantes)
+        last_7_days = next_days[:7]
+        temps_max_7 = [day.get("temperature_2m_max", 0) for day in last_7_days]
+        temps_min_7 = [day.get("temperature_2m_min", 0) for day in last_7_days]
+        precips_7 = [day.get("precipitation_sum", 0) for day in last_7_days]
+        
+        avg_temp_max_7 = sum(temps_max_7) / len(temps_max_7) if temps_max_7 else 0
+        avg_temp_min_7 = sum(temps_min_7) / len(temps_min_7) if temps_min_7 else 0
+        total_precip_7 = sum(precips_7)
+        precip_days_7 = sum(1 for p in precips_7 if p > 0)
+        
+        # Variação térmica
+        variacao_termica = avg_temp_max - avg_temp_min
+        variacao_termica_7 = avg_temp_max_7 - avg_temp_min_7
+        
+        # Dias críticos (chuva intensa ou calor extremo)
+        dias_chuva_intensa = sum(1 for p in precips if p > 10)
+        dias_calor_extremo = sum(1 for t in temps_max if t > 30)
+    else:
+        avg_temp_max = avg_temp_min = total_precip = avg_wind = precip_days = 0
+        avg_temp_max_7 = avg_temp_min_7 = total_precip_7 = precip_days_7 = 0
+        variacao_termica = variacao_termica_7 = 0
+        dias_chuva_intensa = dias_calor_extremo = 0
+        total_precip_hours = 0
+    
+    # Extrair dados de preço relevantes
+    preco_atual = preco.get("preco_atual", 0)
+    medias_moveis = preco.get("medias_moveis_3_dias", [])
+    desvios_padrao = preco.get("desvio_padrao_10_dias", [])
+    
+    # Calcular métricas de preço detalhadas
+    if medias_moveis:
+        # Valores das médias móveis
+        valores_medias = [m.get("media", 0) for m in medias_moveis]
+        
+        # Tendência de curto prazo (últimas 3 médias)
+        if len(valores_medias) >= 3:
+            media_recente = valores_medias[-1]
+            media_anterior = valores_medias[-2]
+            media_antiga = valores_medias[-3]
+            
+            tendencia_curta = "alta" if media_recente > media_anterior else "baixa" if media_recente < media_anterior else "estável"
+            variacao_curta = ((media_recente - media_anterior) / media_anterior * 100) if media_anterior else 0
+            
+            # Tendência de médio prazo (últimas 5 médias)
+            if len(valores_medias) >= 5:
+                media_5_periodos = sum(valores_medias[-5:]) / 5
+                media_10_periodos = sum(valores_medias[-10:]) / 10 if len(valores_medias) >= 10 else media_5_periodos
+                tendencia_media = "alta" if media_5_periodos > media_10_periodos else "baixa" if media_5_periodos < media_10_periodos else "estável"
+            else:
+                tendencia_media = "indeterminada"
+                media_5_periodos = media_recente
+        else:
+            tendencia_curta = tendencia_media = "indeterminada"
+            variacao_curta = 0
+            media_5_periodos = preco_atual
+        
+        # Volatilidade (desvio padrão)
+        if desvios_padrao:
+            ultimo_desvio = desvios_padrao[-1].get("desvio_padrao", 0) if desvios_padrao else 0
+            avg_desvio = sum(d.get("desvio_padrao", 0) for d in desvios_padrao) / len(desvios_padrao) if desvios_padrao else 0
+        else:
+            ultimo_desvio = avg_desvio = 0
+        
+        # Comparação com média histórica
+        media_geral = sum(valores_medias) / len(valores_medias) if valores_medias else preco_atual
+        variacao_vs_media = ((preco_atual - media_geral) / media_geral * 100) if media_geral else 0
+    else:
+        tendencia_curta = tendencia_media = "indeterminada"
+        variacao_curta = variacao_vs_media = 0
+        media_5_periodos = preco_atual
+        ultimo_desvio = avg_desvio = 0
+        media_geral = preco_atual
+    
+    # Extrair insights relevantes dos relatórios (apenas se muito relevantes)
+    insights_relatorios = []
+    if relatorios:
+        for rel in relatorios[:2]:  # Limitar a 2 relatórios mais relevantes
+            content = rel.get("content", "")
+            # Buscar menções específicas ao tipo de café ou região
+            if tipo_cafe.lower() in content.lower() or estado.lower() in content.lower():
+                insights_relatorios.append(content[:150] + "...")  # Limitar tamanho
     
     prompt = f"""
         Você é um especialista em cafeicultura e comercialização de café.
@@ -384,45 +488,85 @@ def build_ai_prompt(
 
         **ANÁLISE QUANTITATIVA:**
         - Score Climático: {climate_score:.3f} (peso 35%)
-        - Score de Preços: {price_score:.3f} (peso 40%)
+        - Score de Preços: {price_score:.3f} (peso 40%) 
         - Score de Mercado: {market_score:.3f} (peso 25%)
         - **Score Final: {decision_score:.3f}** → Limiar: 0.5 para VENDER
 
         ---
 
-        ### DADOS QUE FUNDAMENTARAM A DECISÃO
+        ### DADOS CLIMÁTICOS DETALHADOS (Próximos 14 dias - {cidade}, {estado})
 
-        **DADOS CLIMÁTICOS:**
-        {clima}
+        **VISÃO GERAL (14 dias):**
+        - Temperatura máxima média: {avg_temp_max:.1f}°C
+        - Temperatura mínima média: {avg_temp_min:.1f}°C  
+        - Variação térmica diária: {variacao_termica:.1f}°C
+        - Precipitação total: {total_precip:.1f}mm
+        - Dias com chuva: {precip_days} dias
+        - Horas de precipitação: {total_precip_hours:.1f}h
+        - Velocidade média do vento: {avg_wind:.1f}km/h
+        - Dias com chuva intensa (>10mm): {dias_chuva_intensa}
+        - Dias com calor extremo (>30°C): {dias_calor_extremo}
 
-        **DADOS DE PREÇOS:**
-        {preco}
+        **PRÓXIMOS 7 DIAS (Período Crítico):**
+        - Temp. máxima: {avg_temp_max_7:.1f}°C | Temp. mínima: {avg_temp_min_7:.1f}°C
+        - Precipitação: {total_precip_7:.1f}mm em {precip_days_7} dias
+        - Variação térmica: {variacao_termica_7:.1f}°C
+
+        ### ANÁLISE DE PREÇOS DETALHADA ({tipo_cafe.title()})
+
+        **PREÇOS ATUAIS:**
+        - Preço atual: R$ {preco_atual:.2f}
+        - Média geral (90 dias): R$ {media_geral:.2f}
+        - Variação vs média: {variacao_vs_media:+.1f}%
+
+        **TENDÊNCIAS:**
+        - Curto prazo (últimos períodos): {tendencia_curta} ({variacao_curta:+.1f}%)
+        - Médio prazo: {tendencia_media}
+        - Média últimos 5 períodos: R$ {media_5_periodos:.2f}
+
+        **VOLATILIDADE:**
+        - Desvio padrão recente: R$ {ultimo_desvio:.2f}
+        - Desvio padrão médio: R$ {avg_desvio:.2f}
+        - Períodos analisados: {len(medias_moveis)} médias móveis
 
         **INFORMAÇÕES DO CAFÉ:**
         - Tipo: {tipo_cafe}
-        - Localização: {cidade}, {estado}
-        - Data de colheita: {data_colheita}
-        - Quantidade: {quantidade} sacas
         - Estado: {estado_cafe}
+        - Quantidade: {quantidade} sacas
+        - Data de colheita: {data_colheita}
 
-        **RELATÓRIOS TÉCNICOS (contexto adicional):**
-        {relatorios}
+        **CONTEXTO ADICIONAL (Relatórios):**
+        {'- ' + ' | '.join(insights_relatorios) if insights_relatorios else 'Nenhum insight relevante dos relatórios para esta decisão específica.'}
 
         ---
 
-        Sua tarefa é explicar por que a decisão de **{decision.upper()}** é apropriada baseada nos dados acima.
+        Sua tarefa é explicar por que a decisão de **{decision.upper()}** é apropriada BASEANDO-SE PRINCIPALMENTE NOS DADOS CLIMÁTICOS E DE PREÇO.
 
-        Considere na explicação:
-        1. Como as condições climáticas dos próximos 14 dias influenciam
-        2. O que as tendências de preço indicam
-        3. O estado atual do café e logística
-        4. Insights relevantes dos relatórios técnicos
+        **FOCO PRINCIPAL (80% da explicação):**
+        1. **Análise Climática Detalhada**: 
+           - Como as condições dos próximos 7-14 dias afetam qualidade, secagem, logística
+           - Impacto das temperaturas, chuva e vento no café {estado_cafe}
+           - Risco de dias críticos (chuva intensa/calor extremo)
+
+        2. **Análise de Preços Avançada**:
+           - Significado da tendência {tendencia_curta} e variação de {variacao_curta:+.1f}%
+           - Posicionamento do preço atual vs histórico (R$ {preco_atual:.2f} vs R$ {media_geral:.2f})
+           - Impacto da volatilidade (desvio R$ {ultimo_desvio:.2f})
+
+        **CONTEXTO SECUNDÁRIO (20% da explicação):**
+        3. **Considerações Complementares**: Apenas se muito relevante, mencione brevemente insights dos relatórios
+
+        Seja ESPECÍFICO com números: 
+        - Cite temperaturas exatas ({avg_temp_max_7:.1f}°C/{avg_temp_min_7:.1f}°C)
+        - Precipitação concreta ({total_precip_7:.1f}mm)
+        - Preços precisos (R$ {preco_atual:.2f})
+        - Variações percentuais ({variacao_vs_media:+.1f}%)
 
         Responda APENAS este JSON:
 
         {{
         "decisao": "{decision}",
-        "explicacao": "Explicação detalhada em até 150 palavras justificando por que {decision.upper()} é a decisão correta. Cite números específicos dos dados climáticos e de preços."
+        "explicacao": "Explicação técnica em 150-180 palavras focando 80% em clima e preço. Use números específicos: temp {avg_temp_max_7:.1f}°C, precip {total_precip_7:.1f}mm, preço R$ {preco_atual:.2f}, variação {variacao_vs_media:+.1f}%, tendência {tendencia_curta}."
         }}
         """
     return prompt.strip()
