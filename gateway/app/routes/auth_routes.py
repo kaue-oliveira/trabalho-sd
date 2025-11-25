@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 import httpx
 from app.clients.data_client import get_data_service_client
-from app.utils.jwt_utils import create_access_token, verify_token
 from pydantic import BaseModel
 
 
@@ -85,12 +84,8 @@ async def login(login_data: LoginRequest, data_client: httpx.AsyncClient = Depen
         resp = await data_client.post("/auth/login", json=login_data.dict())
         resp.raise_for_status()
         response_data = resp.json()
-        user_data = response_data["user"]
-
-        token_data = {"sub": str(user_data["id"]), "email": user_data["email"]}
-        access_token = create_access_token(token_data)
-
-        return LoginResponse(access_token=access_token, user=user_data)
+        
+        return LoginResponse(**response_data)
 
     except httpx.HTTPStatusError as e:
         detail = e.response.json().get("detail") if e.response.content else e.response.text

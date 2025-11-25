@@ -1,22 +1,10 @@
-from datetime import datetime, timedelta, timezone
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt
 
-from app.utils.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from app.utils.config import SECRET_KEY, ALGORITHM
 
 security = HTTPBearer()
-
-
-def create_access_token(data: dict):
-    """
-    Gera um token JWT com expiração embutida.
-    """
-    to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
