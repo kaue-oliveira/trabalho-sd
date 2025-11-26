@@ -9,27 +9,7 @@
 
 ---
 
-## 1. ❗ A Dor que o Sistema Pretende Resolver
-
-Apesar da relevância e abundância de informações climáticas, agronômicas e de mercado, os produtores e cooperativas **não têm acesso a uma ferramenta unificada** que integre todos esses dados e gere recomendações práticas.
-
-A dor central é:
-
-### **→ Produtores e cooperativas não conseguem tomar decisões rápidas e precisas sobre o melhor momento de vender ou manejar a lavoura devido à falta de integração entre clima, preços e condições agronômicas.**
-
-Essa dor se desdobra em problemas reais identificados:
-
-- Dados climáticos estão espalhados entre INMET, Open-Meteo, institutos regionais e previsões globais.  
-- Dados de preço estão fragmentados em CEPEA, B3, ICO e relatórios diversos.  
-- A instabilidade climática recente tornou a tomada de decisão muito arriscada.  
-- Erros de timing na venda resultam em perda financeira significativa.  
-- Pequenos produtores sofrem ainda mais pela falta de acesso a análise técnica.
-
-Hoje, as decisões sobre venda, colheita, manejo e planejamento ainda são feitas de forma manual, empírica ou baseada em informações desatualizadas — exatamente o ponto que o nosso sistema distribuído automatiza.
-
----
-
-## 2. 🧩 Validação do Problema
+## 1. 🧩 Validação do Problema
 
 A cafeicultura brasileira enfrenta, na última década, um cenário crescente de instabilidade causado por mudanças climáticas e oscilações bruscas do mercado. Estudos recentes demonstram que eventos extremos como geadas, estiagens prolongadas e chuvas intensas têm afetado diretamente a produtividade do café (Reis et al., 2025).
 
@@ -52,6 +32,26 @@ Além da variabilidade climática, há também forte instabilidade no mercado na
 O documento evidencia ainda a vulnerabilidade de **pequenos e médios produtores**, que possuem menor acesso a tecnologias de monitoramento climático, dados de mercado e assistência técnica — exatamente o público mais prejudicado pela ausência de ferramentas integradas de apoio à decisão.
 
 Portanto, os dados apontam para um problema real, comprovado e atual: a produção e a precificação do café no Brasil tornaram-se altamente dependentes de condições ambientais instáveis, exigindo métodos modernos de análise, monitoramento contínuo e suporte automatizado para tomada de decisão.
+
+---
+
+## 2. ❗ A Dor que o Sistema Pretende Resolver
+
+Apesar da relevância e abundância de informações climáticas, agronômicas e de mercado, os produtores e cooperativas **não têm acesso a uma ferramenta unificada** que integre todos esses dados e gere recomendações práticas.
+
+A dor central é:
+
+### **→ Produtores e cooperativas não conseguem tomar decisões rápidas e precisas sobre o melhor momento de vender ou manejar a lavoura devido à falta de integração entre clima, preços e condições agronômicas.**
+
+Essa dor se desdobra em problemas reais identificados:
+
+- Dados climáticos estão espalhados entre INMET, Open-Meteo, institutos regionais e previsões globais.  
+- Dados de preço estão fragmentados em CEPEA, B3, ICO e relatórios diversos.  
+- A instabilidade climática recente tornou a tomada de decisão muito arriscada.  
+- Erros de timing na venda resultam em perda financeira significativa.  
+- Pequenos produtores sofrem ainda mais pela falta de acesso a análise técnica.
+
+Hoje, as decisões sobre venda, colheita, manejo e planejamento ainda são feitas de forma manual, empírica ou baseada em informações desatualizadas — exatamente o ponto que o nosso sistema distribuído automatiza.
 
 ---
 
