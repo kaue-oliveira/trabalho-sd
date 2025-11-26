@@ -293,7 +293,7 @@ const NewAnalysis: React.FC = () => {
 
                   <div className={styles.row}>
                     <label className={styles.field}>
-                      <p className={styles.label}>Quantidade (kg) *</p>
+                      <p className={styles.label}>Quantidade *</p>
                       <input
                         className={styles.input}
                         type="text"
