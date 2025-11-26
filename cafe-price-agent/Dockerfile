@@ -10,8 +10,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copia todo o conteúdo do projeto para /app
 COPY . .
 
-# Expõe a porta
-EXPOSE 8000
-
 # Comando para iniciar o uvicorn
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
