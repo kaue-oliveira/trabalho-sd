@@ -37,6 +37,16 @@ const NewAnalysis: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  const getOneYearAgoDate = (): string => {
+    const date = new Date();
+    date.setFullYear(date.getFullYear() - 1);
+    return date.toISOString().split('T')[0];
+  };
+
+  const getTodayDate = (): string => {
+    return new Date().toISOString().split('T')[0];
+  };
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -274,6 +284,8 @@ const NewAnalysis: React.FC = () => {
                         value={formData.data_colheita}
                         onChange={(e) => handleInputChange('data_colheita', e.target.value)}
                         disabled={isAnalyzing}
+                        min={getOneYearAgoDate()}
+                        max={getTodayDate()}
                         required
                       />
                     </div>
