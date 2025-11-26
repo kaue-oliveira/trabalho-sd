@@ -71,14 +71,6 @@ async def rag_search_async(query: str, k: int = 4):
 async def solicitar_decisao_ollama_async(payload: dict):   
     """
     Solicita explicação ao modelo Ollama para a decisão tomada pelo agente
-    
-    Este método:
-    1. Analisa os dados usando as funções do agente agronômico
-    2. Calcula scores para clima, preço e mercado
-    3. Toma a decisão final
-    4. Constrói prompt pedindo explicação
-    5. Envia ao Ollama para gerar explicação detalhada
-    
     """
     clima = payload.get("clima", {})
     preco = payload.get("preco", {})
@@ -112,27 +104,26 @@ async def solicitar_decisao_ollama_async(payload: dict):
     try:
         start = time.perf_counter()
         
-        # Log dos dados climáticos que estão sendo enviados ao Ollama
         print(f"[CLIMA] Dados climáticos enviados ao Ollama: {clima}")
         print(f"[PREÇO] Dados de preço enviados ao Ollama: {preco}")
         print(f"[OLLAMA] Solicitando explicação para decisão: {decision_final.upper()}")
         
         r = await client.post(
-            f"{GATEWAY_URL}/ollama/generate",
-            json={
-                "model": "phi3:mini",
-                "prompt": prompt,
-                "stream": False,
-                "num_predict": 200
-            }
-        )
+    f"{GATEWAY_URL}/ollama/generate",
+    json={
+        "model": "phi3:mini",
+        "prompt": prompt,
+        "stream": False,
+        "num_predict": 200,
+    }
+)
         duration = time.perf_counter() - start
         r.raise_for_status()
 
         explicacao = r.json().get("response", "")
-        
+        print(explicacao)
         return {
-            "decisao": decision_final,  # SEMPRE a decisão do agente
+            "decisao": decision_final,
             "explicacao": explicacao if explicacao else f"Decisão de {decision_final} baseada em análise quantitativa (score: {decision_score:.3f})",
             "ollama_time_seconds": round(duration, 3),
             "decision_score": decision_score,
@@ -143,9 +134,8 @@ async def solicitar_decisao_ollama_async(payload: dict):
 
     except Exception as e:
         print(f"[ERROR] Erro ao consultar Ollama: {e}")
-        # Mesmo com erro, retorna a decisão do agente com explicação padrão
         return {
-            "decisao": decision_final,  # SEMPRE a decisão do agente
+            "decisao": decision_final,
             "explicacao": f"Decisão de {decision_final} baseada em análise quantitativa. Score final: {decision_score:.3f} (clima: {climate_score:.3f}, preço: {price_score:.3f}, mercado: {market_score:.3f}). Limiar para venda: 0.5",
             "ollama_time_seconds": None,
             "decision_score": decision_score,
